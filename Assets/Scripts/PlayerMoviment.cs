@@ -28,6 +28,15 @@ public class PlayerMoviment : MonoBehaviour
     public float groundDistance = 0.4f;
     public LayerMask groundMask;
 
+    [Header("Pick up Itens")]
+    [SerializeField] private LayerMask pickUpLayer;
+    [SerializeField]
+    [Min(1)]
+    private float pickUpDistance = 2f;
+    public Transform playerCameraTransform;
+    public GameObject pickUpUI;
+    private RaycastHit hit;
+
     void Start()
     {
         character = GetComponent<CharacterController>();
@@ -38,6 +47,23 @@ public class PlayerMoviment : MonoBehaviour
         isGrounded = character.isGrounded;
         MyInput();
 
+        Debug.DrawRay(playerCameraTransform.position, playerCameraTransform.forward * pickUpDistance, Color.red);
+        //Pickable items
+        if(hit.collider != null)
+        {
+            hit.collider.GetComponent<HightLights>()?.ToggleHighlight(false);
+            pickUpUI.SetActive(false);
+        }
+        if(Physics.Raycast(playerCameraTransform.position, playerCameraTransform.forward, out hit, pickUpDistance, pickUpLayer))
+        {
+            hit.collider.GetComponent<HightLights>()?.ToggleHighlight(true);
+            pickUpUI.SetActive(true);
+            if (Input.GetKeyDown(KeyCode.E))
+            {
+                Debug.Log("Pegou o item");
+                // hit.collider.GetComponent<PickableItem>().Pick();
+            }
+        }
     }
 
     void FixedUpdate()
