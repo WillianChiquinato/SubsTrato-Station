@@ -2,30 +2,37 @@ using UnityEngine;
 
 public class PlayerCam : MonoBehaviour
 {
-    public float sensX;
-    public float sensY;
+    public float sensX = 100f;
+    public float sensY = 100f;
 
-    public Transform orientation;
+    public Transform playerBody;
 
-    float xRotation;
-    float yRotation;
+    Vector3 cameraRotation;
 
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        cameraRotation = transform.localEulerAngles;
     }
+
 
     void Update()
     {
-        float mouseX = Input.GetAxisRaw("Mouse X") * Time.deltaTime * sensX;
-        float mouseY = Input.GetAxisRaw("Mouse Y") * Time.deltaTime * sensY;
+        float mouseX = Input.GetAxis("Mouse X") * sensX * Time.deltaTime;
+        float mouseY = Input.GetAxis("Mouse Y") * sensY * Time.deltaTime;
 
-        yRotation += mouseX;
-        xRotation -= mouseY;
-        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
+        // Atualiza o player (só Y)
+        playerBody.Rotate(Vector3.up * mouseX);
 
-        transform.localRotation = Quaternion.Euler(xRotation, yRotation, 0);
-        orientation.localRotation = Quaternion.Euler(0, yRotation, 0);
+        // Atualiza rotação local da câmera (X e Z)
+        cameraRotation.x -= mouseY;
+        cameraRotation.x = Mathf.Clamp(cameraRotation.x, -90f, 90f);
+
+        // Se não for filha, você precisa montar a rotação global manualmente:
+        Quaternion playerRotation = Quaternion.Euler(0f, playerBody.eulerAngles.y, 0f);
+        Quaternion cameraLocalRotation = Quaternion.Euler(cameraRotation);
+
+        transform.rotation = playerRotation * cameraLocalRotation;
     }
 }
