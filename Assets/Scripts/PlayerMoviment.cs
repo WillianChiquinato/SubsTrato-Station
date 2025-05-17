@@ -44,6 +44,19 @@ public class PlayerMoviment : MonoBehaviour
     public GameObject ItemFlutuante;
     public float itemFlutuanteDistance = 2f;
     public float itemFlutuanteSpeed = 10f;
+    public bool isPickingUp = false;
+
+    public bool canMove
+    {
+        get
+        {
+            return animator.GetBool("canMove");
+        }
+        set
+        {
+            animator.SetBool("canMove", value);
+        }
+    }
 
     void Start()
     {
@@ -59,47 +72,53 @@ public class PlayerMoviment : MonoBehaviour
         animator.SetBool("IsGround", isGrounded);
         animator.SetBool("Jump", isGrounded);
         animator.SetFloat("yVelocity", velocity.y);
-        MyInput();
-        DropItem();
-        UseItem();
-
-        if (Input.GetKey(jumpKey) && isGrounded)
+        if (canMove)
         {
-            Jump();
-        }
+            MyInput();
+            DropItem();
+            UseItem();
 
-        Debug.DrawRay(playerCameraTransform.position, playerCameraTransform.forward * pickUpDistance, Color.red);
-        //Pickable items
-        if (hit.collider != null)
-        {
-            hit.collider.GetComponent<HightLights>()?.ToggleHighlight(false);
-            pickUpUI.SetActive(false);
-        }
+            if (Input.GetKey(jumpKey) && isGrounded)
+            {
+                Jump();
+            }
 
-        if (ItemFlutuante != null)
-        {
-            Vector3 mousePos = Input.mousePosition;
-            mousePos.z = itemFlutuanteDistance; // distância da câmera
+            Debug.DrawRay(playerCameraTransform.position, playerCameraTransform.forward * pickUpDistance, Color.red);
+            //Pickable items
+            if (hit.collider != null)
+            {
+                hit.collider.GetComponent<HightLights>()?.ToggleHighlight(false);
+                pickUpUI.SetActive(false);
+            }
 
-            Vector3 worldPos = Camera.main.ScreenToWorldPoint(mousePos);
-            ItemFlutuante.transform.position = Vector3.Lerp(
-                ItemFlutuante.transform.position,
-                worldPos,
-                Time.deltaTime * itemFlutuanteSpeed
-            );
-        }
+            if (ItemFlutuante != null)
+            {
+                Vector3 mousePos = Input.mousePosition;
+                mousePos.z = itemFlutuanteDistance; // distância da câmera
 
-        //Sempre por ultimo.
-        if (myHandItem != null)
-        {
-            return;
-        }
+                Vector3 worldPos = Camera.main.ScreenToWorldPoint(mousePos);
+                ItemFlutuante.transform.position = Vector3.Lerp(
+                    ItemFlutuante.transform.position,
+                    worldPos,
+                    Time.deltaTime * itemFlutuanteSpeed
+                );
+            }
 
-        if (Physics.Raycast(playerCameraTransform.position, playerCameraTransform.forward, out hit, pickUpDistance, pickUpLayer))
-        {
-            hit.collider.GetComponent<HightLights>()?.ToggleHighlight(true);
-            pickUpUI.SetActive(true);
-            PickUp();
+            //Sempre por ultimo.
+            if (myHandItem != null)
+            {
+                return;
+            }
+
+            if (Physics.Raycast(playerCameraTransform.position, playerCameraTransform.forward, out hit, pickUpDistance, pickUpLayer))
+            {
+                hit.collider.GetComponent<HightLights>()?.ToggleHighlight(true);
+                pickUpUI.SetActive(true);
+                if (Input.GetKeyDown(KeyCode.E))
+                {
+                    StartPickUp();
+                }
+            }
         }
     }
 
@@ -130,6 +149,9 @@ public class PlayerMoviment : MonoBehaviour
 
         isMoving = horizontalInput != 0 || verticalInput != 0;
         animator.SetBool("Run", isMoving);
+
+        animator.SetFloat("horizontal", horizontalInput);
+        animator.SetFloat("vertical", verticalInput);
     }
 
     private void movePlayer()
@@ -143,48 +165,53 @@ public class PlayerMoviment : MonoBehaviour
 
     }
 
-    public void PickUp()
+    void StartPickUp()
     {
-        if (Input.GetKeyDown(KeyCode.E))
+        if (hit.collider != null && myHandItem == null && !isPickingUp)
         {
-            if (hit.collider != null && myHandItem == null)
+            Rigidbody rb = hit.collider.GetComponent<Rigidbody>();
+            Debug.Log("Interacting with item: " + hit.collider.name);
+
+            if (hit.collider.GetComponent<Food>() || hit.collider.GetComponent<Weapon>())
             {
-                // Interact with the item
-                Debug.Log("Interacting with item: " + hit.collider.name);
-                Rigidbody rb = hit.collider.GetComponent<Rigidbody>();
-                if (hit.collider.GetComponent<Food>() || hit.collider.GetComponent<Weapon>())
-                {
-                    Debug.Log("Item de comida");
-                    myHandItem = hit.collider.gameObject;
-                    myHandItem.transform.SetParent(pickUpParent, false);
+                animator.SetTrigger("PickUp");
+                canMove = false;
+                isPickingUp = true;
+                myHandItem = hit.collider.gameObject;
 
-                    myHandItem.transform.localPosition = Vector3.zero;
-                    myHandItem.transform.localRotation = Quaternion.identity;
+                // Chama o pickup de fato depois de 0.7 segundos
+                Invoke(nameof(PickUp), 0.7f);
+            }
+            else if (hit.collider.GetComponent<Item>())
+            {
+                Debug.Log("É um item do cenário");
+                ItemFlutuante = hit.collider.gameObject;
+                myHandItem = ItemFlutuante;
 
-                    if (rb != null)
-                    {
-                        rb.isKinematic = true;
-                    }
-                    return;
-                }
+                if (rb != null)
+                    Destroy(rb);
 
-                if (hit.collider.GetComponent<Item>())
-                {
-                    Debug.Log("É um item do cenário");
-
-                    ItemFlutuante = hit.collider.gameObject;
-                    myHandItem = ItemFlutuante;
-
-                    if (rb != null)
-                    {
-                        rb.isKinematic = true;
-                    }
-
-                    ItemFlutuante.transform.SetParent(null);
-                    return;
-                }
+                ItemFlutuante.transform.SetParent(null);
             }
         }
+    }
+
+    void PickUp()
+    {
+        if (myHandItem == null) return;
+
+        Rigidbody rb = myHandItem.GetComponent<Rigidbody>();
+        if (rb != null)
+            Destroy(rb);
+
+        myHandItem.transform.SetParent(pickUpParent, false);
+        myHandItem.transform.localPosition = Vector3.zero;
+        myHandItem.transform.localRotation = Quaternion.identity;
+
+        isPickingUp = false;
+        canMove = true;
+
+        Debug.Log("Item pego com sucesso!");
     }
 
     public void DropItem()
@@ -193,12 +220,19 @@ public class PlayerMoviment : MonoBehaviour
         {
             if (myHandItem != null)
             {
+                myHandItem.AddComponent<Rigidbody>();
+                Rigidbody rb = myHandItem.GetComponent<Rigidbody>();
+
                 myHandItem.transform.SetParent(null);
                 ItemFlutuante = null;
-                Rigidbody rb = myHandItem.GetComponent<Rigidbody>();
-                if (rb != null)
+                if (myHandItem.GetComponent<Item>())
                 {
-                    rb.isKinematic = false;
+                    Debug.Log("É um item do cenário, sem jogar item!!");
+                }
+                else
+                {
+                    rb.AddForce(playerCameraTransform.forward * 2f, ForceMode.Impulse);
+                    rb.AddForce(playerCameraTransform.up * 4f, ForceMode.Impulse);
                 }
                 myHandItem = null;
             }
