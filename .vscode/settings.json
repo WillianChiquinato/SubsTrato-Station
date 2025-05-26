@@ -56,5 +56,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "Subtrato  Station.sln"
+    "dotnet.defaultSolution": "SubsTrato-Station.sln"
 }
