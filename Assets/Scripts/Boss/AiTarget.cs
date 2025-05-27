@@ -4,13 +4,14 @@ using UnityEngine.AI;
 public class AiTarget : MonoBehaviour
 {
     [Header("Target Settings")]
+    public SphereCollider damageCollider;
     public Transform target;
     public bool targetBool;
     public float AttackDistance;
 
     private NavMeshAgent agent;
     private Animator animator;
-    private float distanceToTarget;
+    [SerializeField] private float distanceToTarget;
 
     [Header("States")]
     public bool IsMoving;
@@ -37,6 +38,8 @@ public class AiTarget : MonoBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
+        damageCollider = GetComponentInChildren<SphereCollider>();
+        damageCollider.enabled = false;
 
         //Debug por enquanto.
         // target = GameObject.FindGameObjectWithTag("Player").transform;
@@ -49,19 +52,44 @@ public class AiTarget : MonoBehaviour
         animator.SetBool("Patrulha", IsPatrolling);
         animator.SetBool("Target", targetBool);
 
+        if (target != null)
+        {
+            if (!target.GetComponent<Health>().isAlive)
+            {
+                target = null;
+            }
+        }
+
+        if (animator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
+        {
+            if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.5f && animator.GetCurrentAnimatorStateInfo(0).normalizedTime <= 0.8f)
+            {
+                damageCollider.enabled = true;
+                damageCollider.isTrigger = true;
+            }
+            else
+            {
+                damageCollider.enabled = false;
+                damageCollider.isTrigger = false;
+            }
+
+            if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.8f)
+            {
+                GetComponentInChildren<AttackBoss>().ResetAttack();
+            }
+        }
+
         if (target == null)
         {
-            IsPatrolling = true;
-            targetBool = false;
-            agent.speed = 2.0f;
             Patrulha();
+            return;
         }
         else
         {
-            agent.speed = 4.0f;
-            targetBool = true;
-            IsPatrolling = false;
             distanceToTarget = Vector3.Distance(agent.transform.position, target.position);
+            agent.speed = 4.0f;
+            IsPatrolling = false;
+            targetBool = true;
 
             if (distanceToTarget > AttackDistance)
             {
@@ -76,15 +104,17 @@ public class AiTarget : MonoBehaviour
                 IsMoving = false;
                 isAttacking = true;
             }
-        }
 
-        if (!IsMoving)
-        {
-            canMove = false;
-        }
-        else
-        {
-            canMove = true;
+            if (canMove)
+            {
+                animator.applyRootMotion = false;
+                agent.isStopped = false;
+            }
+            else
+            {
+                animator.applyRootMotion = true;
+                agent.isStopped = true;
+            }
         }
     }
 
@@ -92,10 +122,16 @@ public class AiTarget : MonoBehaviour
     {
         if (PatrulhaTargets.Length == 0) return;
 
+        agent.speed = 2.0f;
         agent.isStopped = false;
         agent.destination = PatrulhaTargets[currentPatrolIndex].position;
+
+        targetBool = false;
+        IsPatrolling = true;
+        canMove = true;
         IsMoving = true;
         isAttacking = false;
+        animator.applyRootMotion = false;
 
         if (Vector3.Distance(agent.transform.position, PatrulhaTargets[currentPatrolIndex].position) < 0.7f)
         {
@@ -108,5 +144,4 @@ public class AiTarget : MonoBehaviour
 
         Debug.Log("Patrulha indo para o index " + currentPatrolIndex);
     }
-
 }

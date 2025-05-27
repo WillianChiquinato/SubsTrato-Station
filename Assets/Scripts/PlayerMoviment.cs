@@ -13,6 +13,7 @@ public class PlayerMoviment : MonoBehaviour
     CharacterController character;
     public Animator animator;
     public bool isMoving;
+    public GameObject DeathUI;
 
     [Header("Gravidade player")]
     public Vector3 velocity;
@@ -30,6 +31,7 @@ public class PlayerMoviment : MonoBehaviour
     public float groundDistance = 0.4f;
     public LayerMask groundMask;
 
+
     [Header("Pick up Itens")]
     [SerializeField] private LayerMask pickUpLayer;
     [SerializeField]
@@ -46,6 +48,12 @@ public class PlayerMoviment : MonoBehaviour
     public float itemFlutuanteSpeed = 10f;
     public bool isPickingUp = false;
 
+    [Header("Knockback")]
+    public float knockbackDuration = 0.3f;
+    private float knockbackTimer;
+    private Vector3 knockbackVelocity;
+    [HideInInspector] public Health health;
+
     public bool canMove
     {
         get
@@ -58,12 +66,18 @@ public class PlayerMoviment : MonoBehaviour
         }
     }
 
+    void Awake()
+    {
+        DeathUI.SetActive(false);
+    }
+
     void Start()
     {
         character = GetComponent<CharacterController>();
         pickUpUI.SetActive(false);
 
         animator = GetComponent<Animator>();
+        health = GetComponent<Health>();
     }
 
     void Update()
@@ -72,74 +86,100 @@ public class PlayerMoviment : MonoBehaviour
         animator.SetBool("IsGround", isGrounded);
         animator.SetBool("Jump", isGrounded);
         animator.SetFloat("yVelocity", velocity.y);
-        if (canMove)
+        animator.SetBool("IsAlive", health.isAlive);
+
+        if (health.isAlive)
         {
-            MyInput();
-            DropItem();
-            UseItem();
-
-            if (Input.GetKey(jumpKey) && isGrounded)
+            if (knockbackTimer > 0)
             {
-                Jump();
+                character.Move(knockbackVelocity * Time.deltaTime);
+                knockbackTimer -= Time.deltaTime;
             }
 
-            Debug.DrawRay(playerCameraTransform.position, playerCameraTransform.forward * pickUpDistance, Color.red);
-            //Pickable items
-            if (hit.collider != null)
+            if (canMove)
             {
-                hit.collider.GetComponent<HightLights>()?.ToggleHighlight(false);
-                pickUpUI.SetActive(false);
-            }
+                MyInput();
+                DropItem();
+                UseItem();
 
-            if (ItemFlutuante != null)
-            {
-                Vector3 mousePos = Input.mousePosition;
-                mousePos.z = itemFlutuanteDistance; // distância da câmera
-
-                Vector3 worldPos = Camera.main.ScreenToWorldPoint(mousePos);
-                ItemFlutuante.transform.position = Vector3.Lerp(
-                    ItemFlutuante.transform.position,
-                    worldPos,
-                    Time.deltaTime * itemFlutuanteSpeed
-                );
-            }
-
-            //Sempre por ultimo.
-            if (myHandItem != null)
-            {
-                return;
-            }
-
-            if (Physics.Raycast(playerCameraTransform.position, playerCameraTransform.forward, out hit, pickUpDistance, pickUpLayer))
-            {
-                hit.collider.GetComponent<HightLights>()?.ToggleHighlight(true);
-                pickUpUI.SetActive(true);
-                if (Input.GetKeyDown(KeyCode.E))
+                if (Input.GetKey(jumpKey) && isGrounded)
                 {
-                    StartPickUp();
+                    Jump();
+                }
+
+                Debug.DrawRay(playerCameraTransform.position, playerCameraTransform.forward * pickUpDistance, Color.red);
+                //Pickable items
+                if (hit.collider != null)
+                {
+                    hit.collider.GetComponent<HightLights>()?.ToggleHighlight(false);
+                    pickUpUI.SetActive(false);
+                }
+
+                if (ItemFlutuante != null)
+                {
+                    Vector3 mousePos = Input.mousePosition;
+                    mousePos.z = itemFlutuanteDistance; // distância da câmera
+
+                    Vector3 worldPos = Camera.main.ScreenToWorldPoint(mousePos);
+                    ItemFlutuante.transform.position = Vector3.Lerp(
+                        ItemFlutuante.transform.position,
+                        worldPos,
+                        Time.deltaTime * itemFlutuanteSpeed
+                    );
+                }
+
+                //Sempre por ultimo.
+                if (myHandItem != null)
+                {
+                    return;
+                }
+
+                if (Physics.Raycast(playerCameraTransform.position, playerCameraTransform.forward, out hit, pickUpDistance, pickUpLayer))
+                {
+                    hit.collider.GetComponent<HightLights>()?.ToggleHighlight(true);
+                    pickUpUI.SetActive(true);
+                    if (Input.GetKeyDown(KeyCode.E))
+                    {
+                        StartPickUp();
+                    }
                 }
             }
+        }
+        else
+        {
+            pickUpUI.SetActive(false);
+            canMove = false;
+            animator.SetTrigger("Death");
+            DeathUI.SetActive(true);
         }
     }
 
     void FixedUpdate()
     {
-        movePlayer();
-
-        if (isGrounded && velocity.y < 0)
+        if (health.isAlive)
         {
-            velocity.y = -2f;
+            movePlayer();
+
+            if (isGrounded && velocity.y < 0)
+            {
+                velocity.y = -2f;
+            }
+
+            velocity.y += gravity * Time.deltaTime;
+
+            Vector3 finalMove = moveDirection * moveSpeed;
+
+            if (!isGrounded)
+                finalMove *= airControlMultiplier;
+
+            finalMove.y = velocity.y;
+            character.Move(finalMove * Time.deltaTime);
         }
-
-        velocity.y += gravity * Time.deltaTime;
-
-        Vector3 finalMove = moveDirection * moveSpeed;
-
-        if (!isGrounded)
-            finalMove *= airControlMultiplier;
-
-        finalMove.y = velocity.y;
-        character.Move(finalMove * Time.deltaTime);
+        else
+        {
+            character.Move(Vector3.zero);
+            velocity = Vector3.zero;
+        }
     }
 
     private void MyInput()
@@ -162,7 +202,6 @@ public class PlayerMoviment : MonoBehaviour
     public void Jump()
     {
         velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-
     }
 
     void StartPickUp()
@@ -252,5 +291,17 @@ public class PlayerMoviment : MonoBehaviour
                 }
             }
         }
+    }
+
+    public void ApplyKnockback(Vector3 direction, float force)
+    {
+        direction.y = 0.2f;
+        knockbackVelocity = direction.normalized * force;
+        knockbackTimer = knockbackDuration;
+    }
+
+    public bool IsBeingKnockedBack()
+    {
+        return knockbackTimer > 0;
     }
 }
