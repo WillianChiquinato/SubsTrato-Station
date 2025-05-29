@@ -48,5 +48,12 @@ public class PlayerCam : MonoBehaviour
             transform.localEulerAngles = cameraRotation;
             playerBody.rotation = Quaternion.Euler(0f, playerBody.eulerAngles.y, 0f);
         }
+
+        if (player.isPickingUp)
+        {
+            // Se o jogador estiver pegando um item, mantém a rotação da câmera
+            transform.localEulerAngles = cameraRotation;
+            playerBody.rotation = Quaternion.Euler(0f, playerBody.eulerAngles.y, 0f);
+        }
     }
 }

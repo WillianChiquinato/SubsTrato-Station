@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 public class PlayerMoviment : MonoBehaviour
@@ -5,12 +6,16 @@ public class PlayerMoviment : MonoBehaviour
     [Header("Movement")]
     public float moveSpeed;
     public Transform orientation;
+    public bool isStealth = false;
+    public bool aimActive = false;
+    public bool aimAnimActive = false;
 
     float horizontalInput;
     float verticalInput;
 
     Vector3 moveDirection;
     CharacterController character;
+    public CapsuleCollider capsuleColliderCharacter;
     public Animator animator;
     public bool isMoving;
     public GameObject DeathUI;
@@ -74,6 +79,7 @@ public class PlayerMoviment : MonoBehaviour
     void Start()
     {
         character = GetComponent<CharacterController>();
+        capsuleColliderCharacter = GetComponent<CapsuleCollider>();
         pickUpUI.SetActive(false);
 
         animator = GetComponent<Animator>();
@@ -87,6 +93,7 @@ public class PlayerMoviment : MonoBehaviour
         animator.SetBool("Jump", isGrounded);
         animator.SetFloat("yVelocity", velocity.y);
         animator.SetBool("IsAlive", health.isAlive);
+        animator.SetBool("AimPistol", aimAnimActive);
 
         if (health.isAlive)
         {
@@ -102,7 +109,7 @@ public class PlayerMoviment : MonoBehaviour
                 DropItem();
                 UseItem();
 
-                if (Input.GetKey(jumpKey) && isGrounded)
+                if (Input.GetKey(jumpKey) && isGrounded && !isStealth && !aimActive)
                 {
                     Jump();
                 }
@@ -186,12 +193,30 @@ public class PlayerMoviment : MonoBehaviour
     {
         horizontalInput = Input.GetAxis("Horizontal");
         verticalInput = Input.GetAxis("Vertical");
+        isStealth = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+        if (isStealth)
+        {
+            horizontalInput *= 0.4f;
+            verticalInput *= 0.4f;
+            float stealthColliderHeight = Mathf.Lerp(capsuleColliderCharacter.height, 2.1f, Time.deltaTime * 10f);
+            float stealthCharacterHeight = Mathf.Lerp(character.height, 2.1f, Time.deltaTime * 10f);
+            capsuleColliderCharacter.height = stealthColliderHeight;
+            character.height = stealthCharacterHeight;
+        }
+        else
+        {
+            float normalColliderHeight = Mathf.Lerp(capsuleColliderCharacter.height, 2.763223f, Time.deltaTime * 10f);
+            float normalCharacterHeight = Mathf.Lerp(character.height, 2.763223f, Time.deltaTime * 10f);
+            capsuleColliderCharacter.height = normalColliderHeight;
+            character.height = normalCharacterHeight;
+        }
 
         isMoving = horizontalInput != 0 || verticalInput != 0;
         animator.SetBool("Run", isMoving);
 
         animator.SetFloat("horizontal", horizontalInput);
         animator.SetFloat("vertical", verticalInput);
+        animator.SetBool("IsStealth", isStealth);
     }
 
     private void movePlayer()
@@ -219,7 +244,16 @@ public class PlayerMoviment : MonoBehaviour
                 myHandItem = hit.collider.gameObject;
 
                 // Chama o pickup de fato depois de 0.7 segundos
-                Invoke(nameof(PickUp), 0.7f);
+                if (animator.GetCurrentAnimatorStateInfo(0).IsName("PickCrounch"))
+                {
+                    Debug.Log("Animação com crounch");
+                    Invoke(nameof(PickUp), 0.7f);
+                }
+                else
+                {
+                    Debug.Log("Animação sem crounch");
+                    Invoke(nameof(PickUp), 0.7f);
+                }
             }
             else if (hit.collider.GetComponent<Item>())
             {
@@ -228,7 +262,9 @@ public class PlayerMoviment : MonoBehaviour
                 myHandItem = ItemFlutuante;
 
                 if (rb != null)
+                {
                     Destroy(rb);
+                }
 
                 ItemFlutuante.transform.SetParent(null);
             }
@@ -241,7 +277,9 @@ public class PlayerMoviment : MonoBehaviour
 
         Rigidbody rb = myHandItem.GetComponent<Rigidbody>();
         if (rb != null)
+        {
             Destroy(rb);
+        }
 
         myHandItem.transform.SetParent(pickUpParent, false);
         myHandItem.transform.localPosition = Vector3.zero;
@@ -280,17 +318,44 @@ public class PlayerMoviment : MonoBehaviour
 
     public void UseItem()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (myHandItem != null)
         {
-            if (myHandItem != null)
+            if (myHandItem.GetComponent<Food>() != null)
             {
-                IUsable usable = myHandItem.GetComponent<IUsable>();
-                if (usable != null)
+                if (Input.GetMouseButtonDown(0))
                 {
-                    usable.Use(this.gameObject);
+                    Debug.Log("Usando item de comida: " + myHandItem.name);
                 }
             }
+            else
+            {
+                if (Input.GetMouseButtonDown(1))
+                {
+                    Invoke(nameof(ToggleAim), 0.5f);
+                    aimAnimActive = !aimAnimActive;
+                }
+
+                if (Input.GetMouseButtonDown(0) && aimActive)
+                {
+                    if (isStealth && isMoving)
+                    {
+                        return;
+                    }
+
+                    IUsable usable = myHandItem.GetComponent<IUsable>();
+                    if (usable != null)
+                    {
+                        usable.Use(this.gameObject);
+                    }
+                }
+            }
+
         }
+    }
+
+    public void ToggleAim()
+    {
+        aimActive = !aimActive;
     }
 
     public void ApplyKnockback(Vector3 direction, float force)

@@ -1,3 +1,4 @@
+using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -15,11 +16,18 @@ public class ConeVision : MonoBehaviour
     public int visionConeResolution = 120;
     public Mesh VisionMesh;
     MeshFilter meshFilter;
+    public AiTarget aiTarget;
+
+    private bool playerDetectado = false;
+    private Coroutine tempoVerificacao;
+    private float tempoPerseguindoAposPerda = 4f;
+
 
     void Awake()
     {
         player = FindFirstObjectByType<PlayerMoviment>();
         combinedMask = visionObjectsLayer | playerLayer;
+        aiTarget = GetComponentInParent<AiTarget>();
     }
 
     void Start()
@@ -45,6 +53,8 @@ public class ConeVision : MonoBehaviour
         float Sine;
         float Cosine;
 
+        bool detectouPlayerNaVisao = false;
+
         for (int i = 0; i < visionConeResolution; i++)
         {
             Sine = Mathf.Sin(Currentangle);
@@ -57,7 +67,7 @@ public class ConeVision : MonoBehaviour
                 if (((1 << hit.collider.gameObject.layer) & playerLayer) != 0)
                 {
                     Debug.Log("Player detectado!");
-                    // Você pode chamar aqui alguma função de perseguição, ataque, etc.
+                    aiTarget.target = hit.collider.transform;
                 }
             }
             else
@@ -68,6 +78,30 @@ public class ConeVision : MonoBehaviour
 
             Currentangle += angleIcrement;
         }
+
+        if (detectouPlayerNaVisao)
+        {
+            if (!playerDetectado)
+            {
+                playerDetectado = true;
+
+                // Se estava verificando, cancela
+                if (tempoVerificacao != null)
+                {
+                    StopCoroutine(tempoVerificacao);
+                }
+            }
+        }
+        else
+        {
+            if (playerDetectado)
+            {
+                // Começa a contagem de 4 segundos se perdeu a visão
+                tempoVerificacao = StartCoroutine(VerificarSePerdeuPlayer());
+            }
+        }
+
+
         for (int i = 0, j = 0; i < triangles.Length; i += 3, j++)
         {
             triangles[i] = 0;
@@ -80,11 +114,25 @@ public class ConeVision : MonoBehaviour
         meshFilter.mesh = VisionMesh;
     }
 
-    private void OnTriggerStay(Collider other)
+    private IEnumerator VerificarSePerdeuPlayer()
     {
-        if (other.gameObject.CompareTag("Player"))
+        playerDetectado = false;
+        float tempo = 0f;
+
+        while (tempo < tempoPerseguindoAposPerda)
         {
-            Debug.Log("Player is in vision cone");
+            yield return null;
+            tempo += Time.deltaTime;
+
+            // Se detectar o player de novo, cancela
+            if (playerDetectado)
+            {
+                yield break;
+            }
         }
+
+        // Após 4 segundos sem detectar
+        aiTarget.target = null;
+        Debug.Log("Player perdido. Voltando a patrulhar.");
     }
 }
