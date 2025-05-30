@@ -18,9 +18,10 @@ public class ConeVision : MonoBehaviour
     MeshFilter meshFilter;
     public AiTarget aiTarget;
 
-    private bool playerDetectado = false;
+    [SerializeField] private bool playerDetectado = false;
     private Coroutine tempoVerificacao;
     private float tempoPerseguindoAposPerda = 4f;
+    float tempo = 0f;
 
 
     void Awake()
@@ -41,6 +42,7 @@ public class ConeVision : MonoBehaviour
     void Update()
     {
         DrawVisionCone();
+        Debug.Log("Player timing: " + tempo);
     }
 
     void DrawVisionCone()
@@ -68,6 +70,12 @@ public class ConeVision : MonoBehaviour
                 {
                     Debug.Log("Player detectado!");
                     aiTarget.target = hit.collider.transform;
+                    detectouPlayerNaVisao = true;
+                }
+                else
+                {
+                    Debug.Log("Player se escondeu!");
+                    detectouPlayerNaVisao = false;
                 }
             }
             else
@@ -117,7 +125,7 @@ public class ConeVision : MonoBehaviour
     private IEnumerator VerificarSePerdeuPlayer()
     {
         playerDetectado = false;
-        float tempo = 0f;
+        tempo = 0f;
 
         while (tempo < tempoPerseguindoAposPerda)
         {

@@ -308,6 +308,8 @@ public class PlayerMoviment : MonoBehaviour
                 }
                 else
                 {
+                    aimAnimActive = false;
+                    aimActive = false;
                     rb.AddForce(playerCameraTransform.forward * 2f, ForceMode.Impulse);
                     rb.AddForce(playerCameraTransform.up * 4f, ForceMode.Impulse);
                 }
