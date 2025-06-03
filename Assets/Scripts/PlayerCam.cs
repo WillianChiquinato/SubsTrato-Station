@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Animations.Rigging;
 
 public class PlayerCam : MonoBehaviour
 {
@@ -7,53 +8,64 @@ public class PlayerCam : MonoBehaviour
 
     public Transform playerBody;
     public PlayerMoviment player;
-    Vector3 cameraRotation;
+    public Transform target; // Este parece ser o alvo da câmera (cabeça)
+    private float xRotation = 0f;
+    private float mouseX;
+    private float mouseY;
+
+    public TwoBoneIKConstraint rightArmIK;
+    public TwoBoneIKConstraint leftArmIK;
 
     void Start()
     {
         player = playerBody.GetComponent<PlayerMoviment>();
-
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-        cameraRotation = transform.localEulerAngles;
+
+        rightArmIK.weight = 0;
+        leftArmIK.weight = 0;
     }
 
-
-    void Update()
+    void LateUpdate()
     {
-        float mouseX = Input.GetAxis("Mouse X") * sensX * Time.deltaTime;
-        float mouseY = Input.GetAxis("Mouse Y") * sensY * Time.deltaTime;
-
-        if (player.health.isAlive)
+        if (!player.health.isAlive)
         {
-            // Atualiza o player (só Y)
-            playerBody.Rotate(Vector3.up * mouseX);
-
-            // Atualiza rotação local da câmera (X e Z)
-            cameraRotation.x -= mouseY;
-            cameraRotation.x = Mathf.Clamp(cameraRotation.x, -90f, 90f);
-
-            // Se não for filha, você precisa montar a rotação global manualmente:
-            Quaternion playerRotation = Quaternion.Euler(0f, playerBody.eulerAngles.y, 0f);
-            Quaternion cameraLocalRotation = Quaternion.Euler(cameraRotation);
-
-            transform.rotation = playerRotation * cameraLocalRotation;
+            leftArmIK.weight = 0;
+            rightArmIK.weight = 0;
+            return;
         }
-        else
+
+        if (player.aimAnimActive)
         {
-            // Se o jogador não estiver vivo, reseta a rotação da câmera
-            cameraRotation.x = 0f;
-            cameraRotation.y = 0f;
-            cameraRotation.z = 0f;
-            transform.localEulerAngles = cameraRotation;
-            playerBody.rotation = Quaternion.Euler(0f, playerBody.eulerAngles.y, 0f);
+            leftArmIK.weight = Mathf.Lerp(leftArmIK.weight, 1, Time.deltaTime * 5f);
+            rightArmIK.weight = Mathf.Lerp(rightArmIK.weight, 1, Time.deltaTime * 5f);
         }
 
         if (player.isPickingUp)
         {
-            // Se o jogador estiver pegando um item, mantém a rotação da câmera
-            transform.localEulerAngles = cameraRotation;
-            playerBody.rotation = Quaternion.Euler(0f, playerBody.eulerAngles.y, 0f);
+            xRotation = 0f;
+            // Talvez você queira ajustar os alvos do IK ou pesos durante o "picking up"
+            return;
+        }
+
+        // Entrada do mouse
+        mouseX = Input.GetAxis("Mouse X") * sensX * Time.deltaTime;
+        mouseY = Input.GetAxis("Mouse Y") * sensY * Time.deltaTime;
+
+        // Rotação horizontal no corpo
+        playerBody.Rotate(Vector3.up * mouseX);
+
+        // Rotação vertical no alvo (cabeça)
+        xRotation -= mouseY;
+        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
+        if (target) // Verifica se o target (cabeça) existe
+        {
+            target.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+
+            // Agora a câmera segue posição e rotação do alvo
+            Vector3 offset = new Vector3(0f, 0.2f, -0.1f);
+            transform.position = target.position + target.rotation * offset;
+            transform.rotation = target.rotation;
         }
     }
 }
