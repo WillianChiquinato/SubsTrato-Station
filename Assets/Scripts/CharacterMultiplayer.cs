@@ -1,7 +1,9 @@
 using UnityEngine;
+using Fusion;
 
-public class CharacterMultiplayer : MonoBehaviour
+public class CharacterMultiplayer : NetworkBehaviour
 {
+
     [Header("Movement")]
     public float moveSpeed;
 
@@ -9,7 +11,7 @@ public class CharacterMultiplayer : MonoBehaviour
     float verticalInput;
 
     Vector3 moveDirection;
-    CharacterController character;
+    public CharacterController character;
     public CapsuleCollider capsuleColliderCharacter;
     public Animator animator;
     public bool isMoving;
@@ -61,8 +63,13 @@ public class CharacterMultiplayer : MonoBehaviour
         attackCollider.GetComponent<SphereCollider>().enabled = false;
     }
 
-    void Update()
+    public override void FixedUpdateNetwork()
     {
+        if (!HasStateAuthority)
+        {
+            return;
+        }
+
         isGrounded = character.isGrounded;
         animator.SetBool("IsGround", isGrounded);
         animator.SetBool("Jump", isGrounded);
@@ -73,8 +80,8 @@ public class CharacterMultiplayer : MonoBehaviour
         {
             if (knockbackTimer > 0)
             {
-                character.Move(knockbackVelocity * Time.deltaTime);
-                knockbackTimer -= Time.deltaTime;
+                character.Move(knockbackVelocity * Runner.DeltaTime);
+                knockbackTimer -= Runner.DeltaTime;
             }
 
             if (canMove)
@@ -92,18 +99,7 @@ public class CharacterMultiplayer : MonoBehaviour
                     attackCollider.ResetAttack();
                 }
             }
-        }
-        else
-        {
-            canMove = false;
-            animator.SetTrigger("Death");
-        }
-    }
 
-    void FixedUpdate()
-    {
-        if (health.isAlive)
-        {
             movePlayer();
 
             if (isGrounded && velocity.y < 0)
@@ -121,7 +117,7 @@ public class CharacterMultiplayer : MonoBehaviour
                 Attack();
             }
 
-            velocity.y += gravity * Time.deltaTime;
+            velocity.y += gravity * Runner.DeltaTime;
 
             Vector3 finalMove = moveDirection * moveSpeed;
 
@@ -131,10 +127,12 @@ public class CharacterMultiplayer : MonoBehaviour
             }
 
             finalMove.y = velocity.y;
-            character.Move(finalMove * Time.deltaTime);
+            character.Move(finalMove * Runner.DeltaTime);
         }
         else
         {
+            canMove = false;
+            animator.SetTrigger("Death");
             character.Move(Vector3.zero);
             velocity = Vector3.zero;
         }
@@ -159,7 +157,7 @@ public class CharacterMultiplayer : MonoBehaviour
         if (direction.magnitude > 0.1f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(direction);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 15f);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Runner.DeltaTime * 15f);
         }
     }
 
@@ -176,7 +174,7 @@ public class CharacterMultiplayer : MonoBehaviour
         moveDirection = inputDirection * moveSpeed;
 
         // Aplica movimento com o CharacterController
-        character.Move(moveDirection * Time.deltaTime);
+        character.Move(moveDirection * Runner.DeltaTime);
     }
 
     public void Jump()

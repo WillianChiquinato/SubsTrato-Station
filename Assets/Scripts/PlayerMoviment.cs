@@ -1,7 +1,8 @@
-using System.Runtime.CompilerServices;
+using System.Xml.Serialization;
+using Fusion;
 using UnityEngine;
 
-public class PlayerMoviment : MonoBehaviour
+public class PlayerMoviment : NetworkBehaviour
 {
     [Header("Movement")]
     public float moveSpeed;
@@ -86,7 +87,7 @@ public class PlayerMoviment : MonoBehaviour
         health = GetComponent<Health>();
     }
 
-    void Update()
+    public override void FixedUpdateNetwork()
     {
         isGrounded = character.isGrounded;
         animator.SetBool("IsGround", isGrounded);
@@ -99,8 +100,8 @@ public class PlayerMoviment : MonoBehaviour
         {
             if (knockbackTimer > 0)
             {
-                character.Move(knockbackVelocity * Time.deltaTime);
-                knockbackTimer -= Time.deltaTime;
+                character.Move(knockbackVelocity * Runner.DeltaTime);
+                knockbackTimer -= Runner.DeltaTime;
             }
 
             if (canMove)
@@ -131,13 +132,31 @@ public class PlayerMoviment : MonoBehaviour
                     ItemFlutuante.transform.position = Vector3.Lerp(
                         ItemFlutuante.transform.position,
                         worldPos,
-                        Time.deltaTime * itemFlutuanteSpeed
+                        Runner.DeltaTime * itemFlutuanteSpeed
                     );
                 }
 
                 //Sempre por ultimo.
                 if (myHandItem != null)
                 {
+                    // Movement and gravity still need to be applied even if holding an item
+                    movePlayer();
+
+                    if (isGrounded && velocity.y < 0)
+                    {
+                        velocity.y = -2f;
+                    }
+
+                    velocity.y += gravity * Runner.DeltaTime;
+
+                    Vector3 finalMove = moveDirection * moveSpeed;
+
+                    if (!isGrounded)
+                        finalMove *= airControlMultiplier;
+
+                    finalMove.y = velocity.y;
+                    character.Move(finalMove * Runner.DeltaTime);
+
                     return;
                 }
 
@@ -151,20 +170,8 @@ public class PlayerMoviment : MonoBehaviour
                     }
                 }
             }
-        }
-        else
-        {
-            pickUpUI.SetActive(false);
-            canMove = false;
-            animator.SetTrigger("Death");
-            DeathUI.SetActive(true);
-        }
-    }
 
-    void FixedUpdate()
-    {
-        if (health.isAlive)
-        {
+            // Movement and gravity
             movePlayer();
 
             if (isGrounded && velocity.y < 0)
@@ -172,18 +179,23 @@ public class PlayerMoviment : MonoBehaviour
                 velocity.y = -2f;
             }
 
-            velocity.y += gravity * Time.deltaTime;
+            velocity.y += gravity * Runner.DeltaTime;
 
-            Vector3 finalMove = moveDirection * moveSpeed;
+            Vector3 move = moveDirection * moveSpeed;
 
             if (!isGrounded)
-                finalMove *= airControlMultiplier;
+                move *= airControlMultiplier;
 
-            finalMove.y = velocity.y;
-            character.Move(finalMove * Time.deltaTime);
+            move.y = velocity.y;
+            character.Move(move * Runner.DeltaTime);
         }
         else
         {
+            pickUpUI.SetActive(false);
+            canMove = false;
+            animator.SetTrigger("Death");
+            DeathUI.SetActive(true);
+
             character.Move(Vector3.zero);
             velocity = Vector3.zero;
         }
@@ -198,15 +210,15 @@ public class PlayerMoviment : MonoBehaviour
         {
             horizontalInput *= 0.4f;
             verticalInput *= 0.4f;
-            float stealthColliderHeight = Mathf.Lerp(capsuleColliderCharacter.height, 2.1f, Time.deltaTime * 10f);
-            float stealthCharacterHeight = Mathf.Lerp(character.height, 2.1f, Time.deltaTime * 10f);
+            float stealthColliderHeight = Mathf.Lerp(capsuleColliderCharacter.height, 2.1f, Runner.DeltaTime * 10f);
+            float stealthCharacterHeight = Mathf.Lerp(character.height, 2.1f, Runner.DeltaTime * 10f);
             capsuleColliderCharacter.height = stealthColliderHeight;
             character.height = stealthCharacterHeight;
         }
         else
         {
-            float normalColliderHeight = Mathf.Lerp(capsuleColliderCharacter.height, 2.763223f, Time.deltaTime * 10f);
-            float normalCharacterHeight = Mathf.Lerp(character.height, 2.763223f, Time.deltaTime * 10f);
+            float normalColliderHeight = Mathf.Lerp(capsuleColliderCharacter.height, 2.763223f, Runner.DeltaTime * 10f);
+            float normalCharacterHeight = Mathf.Lerp(character.height, 2.763223f, Runner.DeltaTime * 10f);
             capsuleColliderCharacter.height = normalColliderHeight;
             character.height = normalCharacterHeight;
         }
