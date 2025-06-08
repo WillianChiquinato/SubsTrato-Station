@@ -12,12 +12,12 @@ public class CharacterMultiplayerAttack : MonoBehaviour
     {
         if (hasHit) return;
 
-        if (objectCollider.CompareTag("Player"))
+        if (objectCollider.CompareTag("Enemy"))
         {
             hasHit = true;
 
             // Verificando se o jogador usa o CharacterController
-            CharacterMultiplayer ColisorHit = objectCollider.GetComponent<CharacterMultiplayer>();
+            TesteKnock ColisorHit = objectCollider.GetComponent<TesteKnock>();
             Animator playerAnimator = objectCollider.GetComponentInChildren<Animator>();
 
             if (ColisorHit != null)

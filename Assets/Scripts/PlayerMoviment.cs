@@ -1,8 +1,11 @@
-using System.Xml.Serialization;
+using System;
+using System.Collections.Generic;
 using Fusion;
+using Fusion.Sockets;
 using UnityEngine;
+using UnityEngine.UI;
 
-public class PlayerMoviment : NetworkBehaviour
+public class PlayerMoviment : MonoBehaviour
 {
     [Header("Movement")]
     public float moveSpeed;
@@ -58,7 +61,10 @@ public class PlayerMoviment : NetworkBehaviour
     public float knockbackDuration = 0.3f;
     private float knockbackTimer;
     private Vector3 knockbackVelocity;
+
+    [Header("Health e HealthBar")]
     [HideInInspector] public Health health;
+    public float estamina = 50f;
 
     public bool canMove
     {
@@ -87,7 +93,7 @@ public class PlayerMoviment : NetworkBehaviour
         health = GetComponent<Health>();
     }
 
-    public override void FixedUpdateNetwork()
+    public void Update()
     {
         isGrounded = character.isGrounded;
         animator.SetBool("IsGround", isGrounded);
@@ -98,10 +104,34 @@ public class PlayerMoviment : NetworkBehaviour
 
         if (health.isAlive)
         {
+            if (isMoving)
+            {
+                if (estamina > 0)
+                {
+                    estamina -= 4f * Time.deltaTime;
+                }
+            }
+            else
+            {
+                if (estamina < 50f)
+                {
+                    estamina += 2f * Time.deltaTime;
+                }
+            }
+
+            if (estamina <= 0)
+            {
+                moveSpeed = 3f;
+            }
+            else
+            {
+                moveSpeed = 6f;
+            }
+
             if (knockbackTimer > 0)
             {
-                character.Move(knockbackVelocity * Runner.DeltaTime);
-                knockbackTimer -= Runner.DeltaTime;
+                character.Move(knockbackVelocity * Time.deltaTime);
+                knockbackTimer -= Time.deltaTime;
             }
 
             if (canMove)
@@ -132,7 +162,7 @@ public class PlayerMoviment : NetworkBehaviour
                     ItemFlutuante.transform.position = Vector3.Lerp(
                         ItemFlutuante.transform.position,
                         worldPos,
-                        Runner.DeltaTime * itemFlutuanteSpeed
+                        Time.deltaTime * itemFlutuanteSpeed
                     );
                 }
 
@@ -147,7 +177,7 @@ public class PlayerMoviment : NetworkBehaviour
                         velocity.y = -2f;
                     }
 
-                    velocity.y += gravity * Runner.DeltaTime;
+                    velocity.y += gravity * Time.deltaTime;
 
                     Vector3 finalMove = moveDirection * moveSpeed;
 
@@ -155,7 +185,7 @@ public class PlayerMoviment : NetworkBehaviour
                         finalMove *= airControlMultiplier;
 
                     finalMove.y = velocity.y;
-                    character.Move(finalMove * Runner.DeltaTime);
+                    character.Move(finalMove * Time.deltaTime);
 
                     return;
                 }
@@ -179,7 +209,7 @@ public class PlayerMoviment : NetworkBehaviour
                 velocity.y = -2f;
             }
 
-            velocity.y += gravity * Runner.DeltaTime;
+            velocity.y += gravity * Time.deltaTime;
 
             Vector3 move = moveDirection * moveSpeed;
 
@@ -187,7 +217,7 @@ public class PlayerMoviment : NetworkBehaviour
                 move *= airControlMultiplier;
 
             move.y = velocity.y;
-            character.Move(move * Runner.DeltaTime);
+            character.Move(move * Time.deltaTime);
         }
         else
         {
@@ -210,15 +240,15 @@ public class PlayerMoviment : NetworkBehaviour
         {
             horizontalInput *= 0.4f;
             verticalInput *= 0.4f;
-            float stealthColliderHeight = Mathf.Lerp(capsuleColliderCharacter.height, 2.1f, Runner.DeltaTime * 10f);
-            float stealthCharacterHeight = Mathf.Lerp(character.height, 2.1f, Runner.DeltaTime * 10f);
+            float stealthColliderHeight = Mathf.Lerp(capsuleColliderCharacter.height, 2.1f, Time.deltaTime * 10f);
+            float stealthCharacterHeight = Mathf.Lerp(character.height, 2.1f, Time.deltaTime * 10f);
             capsuleColliderCharacter.height = stealthColliderHeight;
             character.height = stealthCharacterHeight;
         }
         else
         {
-            float normalColliderHeight = Mathf.Lerp(capsuleColliderCharacter.height, 2.763223f, Runner.DeltaTime * 10f);
-            float normalCharacterHeight = Mathf.Lerp(character.height, 2.763223f, Runner.DeltaTime * 10f);
+            float normalColliderHeight = Mathf.Lerp(capsuleColliderCharacter.height, 2.763223f, Time.deltaTime * 10f);
+            float normalCharacterHeight = Mathf.Lerp(character.height, 2.763223f, Time.deltaTime * 10f);
             capsuleColliderCharacter.height = normalColliderHeight;
             character.height = normalCharacterHeight;
         }
@@ -300,6 +330,23 @@ public class PlayerMoviment : NetworkBehaviour
         isPickingUp = false;
         canMove = true;
 
+        PlayerInventory inventory = GetComponent<PlayerInventory>();
+        for (int i = 0; i < inventory.totalSlots; i++)
+        {
+            if (inventory.hotbarItems[i] == null)
+            {
+                ItemClass itemComponent = myHandItem.GetComponent<ItemClass>();
+                if (itemComponent != null)
+                {
+                    inventory.hotbarItems[i] = itemComponent.itemSO;
+                    inventory.selectedSlot = i;
+                    inventory.UpdateHotbarUI();
+                }
+                break;
+            }
+        }
+
+
         Debug.Log("Item pego com sucesso!");
     }
 
@@ -322,6 +369,9 @@ public class PlayerMoviment : NetworkBehaviour
                 {
                     aimAnimActive = false;
                     aimActive = false;
+                    orientation.GetComponent<PlayerCam>().rightArmIK.weight = 0;
+                    orientation.GetComponent<PlayerCam>().leftArmIK.weight = 0;
+
                     rb.AddForce(playerCameraTransform.forward * 2f, ForceMode.Impulse);
                     rb.AddForce(playerCameraTransform.up * 4f, ForceMode.Impulse);
                 }

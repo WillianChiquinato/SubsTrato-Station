@@ -1018,9 +1018,9 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.415954
-  m_Height: 2.763223
+  m_Height: 2.715371
   m_Direction: 1
-  m_Center: {x: 0, y: 1.3887333, z: -0.084046006}
+  m_Center: {x: 0, y: 1.4126593, z: -0.084046006}
 --- !u!143 &8716907451332954134
 CharacterController:
   m_ObjectHideFlags: 0
@@ -1076,7 +1076,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85eb816783a6e204da9765802e00b4eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 3
+  moveSpeed: 4
+  character: {fileID: 0}
   capsuleColliderCharacter: {fileID: 0}
   animator: {fileID: 0}
   isMoving: 0

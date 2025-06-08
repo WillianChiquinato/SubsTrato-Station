@@ -38,7 +38,7 @@ public class PlayerCam : MonoBehaviour
         if (player.aimAnimActive)
         {
             leftArmIK.weight = Mathf.Lerp(leftArmIK.weight, 1, Time.deltaTime * 5f);
-            rightArmIK.weight = Mathf.Lerp(rightArmIK.weight, 1, Time.deltaTime * 5f);
+            rightArmIK.weight = Mathf.Lerp(rightArmIK.weight, 0.7f, Time.deltaTime * 5f);
         }
 
         if (player.isPickingUp)
