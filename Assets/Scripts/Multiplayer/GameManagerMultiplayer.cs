@@ -11,6 +11,9 @@ using TMPro;
 
 public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbacks
 {
+    public LevelLoaderAsync levelLoaderMenu;
+    public LevelLoaderGame levelLoader;
+
     public bool isPlayerReadying = false;
     public Button singlePlayerButton;
     public Button multiplayerButton;
@@ -20,6 +23,7 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
 
     public TextMeshProUGUI roomCountPlayers;
     public Button readyButton;
+    private Dictionary<PlayerRef, bool> _playersReady = new();
 
     private string GetSceneInfo()
     {
@@ -36,10 +40,10 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
 
     [Header("Configurações de Gameplay")]
     [SerializeField] private NetworkObject _playerPrefab;
-    [SerializeField] private int _minPlayersToStartGame = 1;
+    private int _minPlayersToStartGame = 1;
 
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
-    private bool _isLoadingGameplayScene = false;
+    [SerializeField] private bool _isLoadingGameplayScene = false;
 
     void Awake()
     {
@@ -54,8 +58,7 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
 
     void Start()
     {
-        // Se este GameObject com PlayersSpawn deve persistir e iniciar a conexão
-        // Idealmente, este script está na Cena 0 e inicia a conexão.
+        levelLoaderMenu = FindFirstObjectByType<LevelLoaderAsync>();
         if (singlePlayerButton)
         {
             singlePlayerButton.onClick.AddListener(() => OnGameModeSelected(GameMode.Single));
@@ -108,22 +111,50 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         // Log
         Debug.Log($"Iniciando jogo no modo: {mode} com a sala: {_roomName}");
 
-        var result = await runner.StartGame(new StartGameArgs()
+        if (levelLoaderMenu != null)
         {
-            GameMode = mode,
-            SessionName = _roomName,
-            Scene = SceneRef.FromIndex(_lobbySceneIndex),
-            PlayerCount = 4,
-            SceneManager = sceneManager
-        });
+            levelLoaderMenu.TransicaoComCallback(async () =>
+            {
+                var result = await runner.StartGame(new StartGameArgs()
+                {
+                    GameMode = mode,
+                    SessionName = _roomName,
+                    Scene = SceneRef.FromIndex(_lobbySceneIndex),
+                    PlayerCount = 4,
+                    SceneManager = sceneManager
+                });
 
-        if (!result.Ok)
-        {
-            Debug.LogError($"Falha ao iniciar o jogo: {result.ShutdownReason} - {result.ErrorMessage}");
+                if (result.Ok)
+                {
+                    Debug.Log("Jogo iniciado com sucesso!");
+                }
+                else
+                {
+                    Debug.LogError("Erro ao iniciar o jogo: " + result.ShutdownReason);
+                }
+            });
         }
         else
         {
-            Debug.Log("StartGame iniciado com sucesso!");
+            Debug.LogWarning("LevelLoader não encontrado. Iniciando jogo direto.");
+
+            var result = await runner.StartGame(new StartGameArgs()
+            {
+                GameMode = mode,
+                SessionName = _roomName,
+                Scene = SceneRef.FromIndex(_lobbySceneIndex),
+                PlayerCount = 4,
+                SceneManager = sceneManager
+            });
+
+            if (result.Ok)
+            {
+                Debug.Log("Jogo iniciado com sucesso!");
+            }
+            else
+            {
+                Debug.LogError("Erro ao iniciar o jogo: " + result.ShutdownReason);
+            }
         }
     }
 
@@ -136,48 +167,39 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         {
             roomCountPlayers = GameObject.Find("TextoConnect")?.GetComponent<TextMeshProUGUI>();
             readyButton = GameObject.Find("readyButton")?.GetComponent<Button>();
+            levelLoader = FindFirstObjectByType<LevelLoaderGame>();
         }
 
         if (Runner.IsSceneAuthority)
         {
             roomCountPlayers.text = $"{Runner.ActivePlayers.Count()} / 4";
-
-            Scene currentScene = SceneManager.GetActiveScene();
-            SceneRef currentSceneRef = SceneRef.FromIndex(currentScene.buildIndex);
-
-            if (currentSceneRef == SceneRef.FromIndex(_lobbySceneIndex) && !_isLoadingGameplayScene)
-            {
-                if (readyButton != null)
-                {
-                    readyButton.onClick.AddListener(IsplayerReadying);
-                }
-                else
-                {
-                    Debug.LogWarning("ReadyButton não encontrado na cena.");
-                }
-                int playerCount = Runner.ActivePlayers.Count();
-                if (playerCount >= _minPlayersToStartGame)
-                {
-                    Debug.Log($"Jogadores mínimos ({_minPlayersToStartGame}) alcançados. Carregando cena de gameplay ({_gameplaySceneIndex}).");
-                    _isLoadingGameplayScene = true;
-                    if (isPlayerReadying)
-                    {
-                        Runner.LoadScene(SceneRef.FromIndex(_gameplaySceneIndex));
-                    }
-                }
-            }
         }
     }
 
     public void IsplayerReadying()
     {
-        isPlayerReadying = !isPlayerReadying;
-        Debug.Log($"Jogador está {(isPlayerReadying ? "pronto" : "não pronto")}. Cena atual: {GetSceneInfo()}");
+        isPlayerReadying = true;
+        _playersReady[Runner.LocalPlayer] = true;
 
-        Button readyButton = GameObject.Find("ReadyButton")?.GetComponent<Button>();
+        Debug.Log($"Jogador {Runner.LocalPlayer} está pronto.");
+
         if (readyButton != null)
         {
-            readyButton.interactable = false; // Desabilita o botão após clicar
+            readyButton.interactable = false;
+        }
+        if (Runner.IsSceneAuthority)
+        {
+            // Verifica se todos estão prontos
+            if (_playersReady.Count >= _minPlayersToStartGame &&
+                _playersReady.Count == Runner.ActivePlayers.Count())
+            {
+                if (!_isLoadingGameplayScene)
+                {
+                    Debug.Log("Todos os jogadores prontos. Iniciando cena de gameplay.");
+                    _isLoadingGameplayScene = true;
+                    levelLoader.Transicao(SceneRef.FromIndex(_gameplaySceneIndex), Runner);
+                }
+            }
         }
     }
 
@@ -220,23 +242,16 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         SceneRef currentSceneRef = SceneRef.FromIndex(currentScene.buildIndex);
         Debug.Log($"OnSceneLoadDone: Cena {GetSceneInfo()} carregada.");
 
-        // Reseta a flag se a cena de gameplay carregou, ou se voltamos ao lobby.
-        if (currentSceneRef == SceneRef.FromIndex(_gameplaySceneIndex))
+        if (currentSceneRef == SceneRef.FromIndex(_lobbySceneIndex))
         {
-            _isLoadingGameplayScene = false;
-            // Aqui você pode querer reposicionar os jogadores ou fazer setup específico da cena de gameplay
-            // Você pode iterar por eles e ajustar suas posições, se necessário.
-            Debug.Log("Cena de Gameplay carregada!");
+            if (readyButton != null)
+            {
+                readyButton.onClick.RemoveAllListeners(); // evita múltiplos registros
+                readyButton.onClick.AddListener(IsplayerReadying);
+            }
         }
-        else if (currentSceneRef == SceneRef.FromIndex(_lobbySceneIndex))
-        {
-            _isLoadingGameplayScene = false; // Estar no lobby significa que não estamos carregando o gameplay
-            Debug.Log("Cena de Lobby carregada!");
-        }
-        // Se os jogadores foram spawnados ANTES desta cena carregar (ex: se este é o primeiro OnSceneLoadDone para o lobby)
-        // e você precisa fazer algo com eles após a cena estar pronta, pode fazer aqui.
-        // Mas OnPlayerJoined já deve ter cuidado do spawn.
     }
+
 
     public void OnInput(NetworkRunner runner, NetworkInput input) { }
     public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) { }

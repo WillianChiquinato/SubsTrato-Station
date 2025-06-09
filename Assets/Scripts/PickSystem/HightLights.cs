@@ -3,14 +3,13 @@ using UnityEngine;
 
 public class HightLights : MonoBehaviour
 {
-    [SerializeField]
-    private List<Renderer> renderers;
+    public List<Renderer> renderers;
 
     [SerializeField]
     private Color color = Color.white;
     private List<Material> materials;
-    
-    private void Awake()
+
+    private void Start()
     {
         materials = new List<Material>();
         foreach (var renderer in renderers)

@@ -35,6 +35,17 @@ public class PlayerCam : MonoBehaviour
             return;
         }
 
+        if (!player.canMove)
+        {
+            return;
+        }
+
+        if (player.isPickingUp)
+        {
+            // Talvez você queira ajustar os alvos do IK ou pesos durante o "picking up"
+            return;
+        }
+
         if (player.aimAnimActive)
         {
             leftArmIK.weight = Mathf.Lerp(leftArmIK.weight, 1, Time.deltaTime * 5f);
@@ -46,12 +57,6 @@ public class PlayerCam : MonoBehaviour
             rightArmIK.weight = Mathf.Lerp(rightArmIK.weight, 0, Time.deltaTime * 5f);
         }
 
-        if (player.isPickingUp)
-        {
-            xRotation = 0f;
-            // Talvez você queira ajustar os alvos do IK ou pesos durante o "picking up"
-            return;
-        }
 
         // Entrada do mouse
         mouseX = Input.GetAxis("Mouse X") * sensX * Time.deltaTime;

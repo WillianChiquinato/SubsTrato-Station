@@ -94,6 +94,8 @@ public class PlayerMoviment : MonoBehaviour
 
         animator = GetComponent<Animator>();
         health = GetComponent<Health>();
+
+        animator.SetBool("StartGame", true);
     }
 
     public void Update()
@@ -107,6 +109,18 @@ public class PlayerMoviment : MonoBehaviour
 
         if (health.isAlive)
         {
+            if (animator.GetCurrentAnimatorStateInfo(0).IsName("StartGame") && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.05f)
+            {
+                animator.applyRootMotion = true;
+                canMove = false;
+                if (animator.GetCurrentAnimatorStateInfo(0).IsName("StartGame") && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.7f)
+                {
+                    animator.SetBool("StartGame", false);
+                    canMove = true;
+                    animator.applyRootMotion = false;
+                }
+            }
+
             if (isMoving)
             {
                 if (estamina > 0 && !isStealth)
@@ -199,11 +213,16 @@ public class PlayerMoviment : MonoBehaviour
 
                 if (Physics.Raycast(playerCameraTransform.position, playerCameraTransform.forward, out hit, pickUpDistance, pickUpLayer))
                 {
-                    hit.collider.GetComponent<HightLights>()?.ToggleHighlight(true);
-                    pickUpUI.SetActive(true);
-                    if (Input.GetKeyDown(KeyCode.E))
+                    HightLights highlight = hit.collider.GetComponent<HightLights>();
+                    if (highlight != null)
                     {
-                        StartPickUp();
+                        highlight.ToggleHighlight(true);
+                        pickUpUI.SetActive(true);
+
+                        if (Input.GetKeyDown(KeyCode.E))
+                        {
+                            StartPickUp();
+                        }
                     }
                 }
             }
@@ -372,6 +391,13 @@ public class PlayerMoviment : MonoBehaviour
             if (inventory.myHandItem != null)
             {
                 inventory.myHandItem.AddComponent<Rigidbody>();
+                inventory.myHandItem.AddComponent<HightLights>();
+
+                var render1 = inventory.myHandItem.GetComponent<HightLights>().renderers = new List<Renderer>(inventory.myHandItem.GetComponents<Renderer>());
+                if (render1 == null)
+                {
+                    inventory.myHandItem.GetComponent<HightLights>().renderers = new List<Renderer>(inventory.myHandItem.GetComponentsInChildren<Renderer>());
+                }
                 Rigidbody rb = inventory.myHandItem.GetComponent<Rigidbody>();
 
                 inventory.myHandItem.transform.SetParent(null);
@@ -409,6 +435,9 @@ public class PlayerMoviment : MonoBehaviour
     {
         if (inventory.myHandItem != null)
         {
+            HightLights hl = inventory.myHandItem.GetComponent<HightLights>();
+            Destroy(hl);
+
             if (inventory.myHandItem.GetComponent<Food>() != null)
             {
                 if (Input.GetMouseButtonDown(0))
@@ -426,6 +455,16 @@ public class PlayerMoviment : MonoBehaviour
                 {
                     Invoke(nameof(ToggleAim), 0.5f);
                     aimAnimActive = !aimAnimActive;
+                    if (aimAnimActive)
+                    {
+                        inventory.myHandItem.transform.localPosition = Vector3.zero;
+                        inventory.myHandItem.transform.localRotation = Quaternion.Euler(0, 0, 36.50f);
+                    }
+                    else
+                    {
+                        inventory.myHandItem.transform.localPosition = Vector3.zero;
+                        inventory.myHandItem.transform.localRotation = Quaternion.identity;
+                    }
                 }
 
                 if (Input.GetMouseButtonDown(0) && aimActive)

@@ -96,8 +96,7 @@ public class PlayerInventory : MonoBehaviour
         }
         else
         {
-            justDroppedItem = false; // reseta o flag
-
+            justDroppedItem = false;
         }
 
         Debug.Log("Item selecionado: " + hotbarItems[selectedSlot]?.itemName);
