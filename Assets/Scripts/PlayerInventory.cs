@@ -1,36 +1,47 @@
 using System.Collections.Generic;
+using Fusion;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class PlayerInventory : MonoBehaviour
 {
     public ItemDatabase itemDatabase;
+    public PlayerMoviment player;
 
     public int totalSlots = 6;
     public int selectedSlot = 0;
 
     [Header("Hotbar Slots")]
-    public Image[] slotHighlights; // Borda de seleção
+    public RectTransform slotHighlight;
+    public RectTransform[] slotPositions;
     public Image[] slotIcons;
 
     [Header("Itens na hotbar")]
     public ItemSO[] hotbarItems;
     public Transform pickUpParent;
     public GameObject myHandItem;
+    public bool justDroppedItem = false;
 
     void Awake()
     {
         ItemDatabase.LoadInstance(itemDatabase);
+        player = GetComponent<PlayerMoviment>();
     }
 
     void Start()
     {
         UpdateHotbarUI();
+        slotHighlight.gameObject.SetActive(false);
     }
 
     void Update()
     {
         float scroll = Input.GetAxis("Mouse ScrollWheel");
+
+        if (player.aimAnimActive)
+        {
+            return;
+        }
 
         if (scroll > 0f)
         {
@@ -55,10 +66,18 @@ public class PlayerInventory : MonoBehaviour
 
     public void UpdateHotbarUI()
     {
+        if (selectedSlot < 0f)
+        {
+            slotHighlight.gameObject.SetActive(false);
+        }
+        else
+        {
+            slotHighlight.position = slotPositions[selectedSlot].position;
+            slotHighlight.gameObject.SetActive(true);
+        }
+
         for (int i = 0; i < totalSlots; i++)
         {
-            slotHighlights[i].enabled = (i == selectedSlot);
-
             if (hotbarItems[i] != null)
             {
                 slotIcons[i].sprite = hotbarItems[i].itemIcon;
@@ -70,10 +89,20 @@ public class PlayerInventory : MonoBehaviour
             }
         }
 
-        EquipSelectedItem();
+        if (!justDroppedItem)
+        {
+            EquipSelectedItem();
+
+        }
+        else
+        {
+            justDroppedItem = false; // reseta o flag
+
+        }
 
         Debug.Log("Item selecionado: " + hotbarItems[selectedSlot]?.itemName);
     }
+
 
     void EquipSelectedItem()
     {
@@ -83,22 +112,48 @@ public class PlayerInventory : MonoBehaviour
             Destroy(myHandItem);
         }
 
-        // Pega o item selecionado na hotbar
         ItemSO selectedItem = hotbarItems[selectedSlot];
 
         if (selectedItem != null)
         {
-            // Cria uma instância do prefab (você precisará mapear qual prefab pertence ao ScriptableObject)
-            GameObject prefab = ItemDatabase.GetPrefabForItem(selectedItem); // você criará isso
+            GameObject prefab = ItemDatabase.GetPrefabForItem(selectedItem);
             if (prefab != null)
             {
                 GameObject newItem = Instantiate(prefab, pickUpParent);
+                Rigidbody rb = newItem.GetComponent<Rigidbody>();
+                if (rb != null)
+                {
+                    Destroy(rb);
+                }
                 newItem.transform.localPosition = Vector3.zero;
                 newItem.transform.localRotation = Quaternion.identity;
 
                 myHandItem = newItem;
+
+                Debug.Log("Equipado item na mão: " + selectedItem.itemName);
+            }
+            else
+            {
+                Debug.LogWarning("Prefab não encontrado para item: " + selectedItem.name);
             }
         }
     }
+
+    public bool AddItemToHotbar(ItemSO newItem)
+    {
+        for (int i = 0; i < hotbarItems.Length; i++)
+        {
+            if (hotbarItems[i] == null)
+            {
+                hotbarItems[i] = newItem;
+                UpdateHotbarUI();
+                return true;
+            }
+        }
+
+        Debug.Log("Hotbar cheia! Não foi possível adicionar: " + newItem.itemName);
+        return false;
+    }
+
 
 }

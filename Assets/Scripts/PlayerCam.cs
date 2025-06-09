@@ -40,6 +40,11 @@ public class PlayerCam : MonoBehaviour
             leftArmIK.weight = Mathf.Lerp(leftArmIK.weight, 1, Time.deltaTime * 5f);
             rightArmIK.weight = Mathf.Lerp(rightArmIK.weight, 0.7f, Time.deltaTime * 5f);
         }
+        else
+        {
+            leftArmIK.weight = Mathf.Lerp(leftArmIK.weight, 0, Time.deltaTime * 5f);
+            rightArmIK.weight = Mathf.Lerp(rightArmIK.weight, 0, Time.deltaTime * 5f);
+        }
 
         if (player.isPickingUp)
         {
@@ -58,7 +63,7 @@ public class PlayerCam : MonoBehaviour
         // Rotação vertical no alvo (cabeça)
         xRotation -= mouseY;
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
-        if (target) // Verifica se o target (cabeça) existe
+        if (target)
         {
             target.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
 

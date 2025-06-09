@@ -66,6 +66,8 @@ public class PlayerMoviment : MonoBehaviour
     [HideInInspector] public Health health;
     public float estamina = 50f;
 
+    public PlayerInventory inventory;
+
     public bool canMove
     {
         get
@@ -81,6 +83,7 @@ public class PlayerMoviment : MonoBehaviour
     void Awake()
     {
         DeathUI.SetActive(false);
+        inventory = GetComponent<PlayerInventory>();
     }
 
     void Start()
@@ -106,9 +109,13 @@ public class PlayerMoviment : MonoBehaviour
         {
             if (isMoving)
             {
-                if (estamina > 0)
+                if (estamina > 0 && !isStealth)
                 {
                     estamina -= 4f * Time.deltaTime;
+                }
+                else if (isStealth)
+                {
+                    estamina += 1f * Time.deltaTime;
                 }
             }
             else
@@ -317,35 +324,36 @@ public class PlayerMoviment : MonoBehaviour
     {
         if (myHandItem == null) return;
 
-        Rigidbody rb = myHandItem.GetComponent<Rigidbody>();
-        if (rb != null)
-        {
-            Destroy(rb);
-        }
-
-        myHandItem.transform.SetParent(pickUpParent, false);
-        myHandItem.transform.localPosition = Vector3.zero;
-        myHandItem.transform.localRotation = Quaternion.identity;
-
         isPickingUp = false;
         canMove = true;
 
-        PlayerInventory inventory = GetComponent<PlayerInventory>();
+        if (inventory == null)
+        {
+            Debug.LogWarning("PlayerInventory não encontrado no objeto.");
+            return;
+        }
+
+        ItemClass itemComponent = myHandItem.GetComponent<ItemClass>();
+        if (itemComponent == null)
+        {
+            Debug.LogWarning("ItemClass não encontrado no myHandItem.");
+            return;
+        }
+
+        // Tenta adicionar o item ao primeiro slot vazio
         for (int i = 0; i < inventory.totalSlots; i++)
         {
             if (inventory.hotbarItems[i] == null)
             {
-                ItemClass itemComponent = myHandItem.GetComponent<ItemClass>();
-                if (itemComponent != null)
-                {
-                    inventory.hotbarItems[i] = itemComponent.itemSO;
-                    inventory.selectedSlot = i;
-                    inventory.UpdateHotbarUI();
-                }
+                inventory.hotbarItems[i] = itemComponent.itemSO;
+                inventory.selectedSlot = i;
+                inventory.UpdateHotbarUI();
+                Destroy(myHandItem);
+
+                Debug.Log("Item adicionado ao slot " + i + ": " + itemComponent.itemSO.name);
                 break;
             }
         }
-
 
         Debug.Log("Item pego com sucesso!");
     }
@@ -354,14 +362,20 @@ public class PlayerMoviment : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Q))
         {
+            ItemFlutuante = null;
             if (myHandItem != null)
             {
                 myHandItem.AddComponent<Rigidbody>();
-                Rigidbody rb = myHandItem.GetComponent<Rigidbody>();
+                myHandItem = null;
+            }
 
-                myHandItem.transform.SetParent(null);
-                ItemFlutuante = null;
-                if (myHandItem.GetComponent<Item>())
+            if (inventory.myHandItem != null)
+            {
+                inventory.myHandItem.AddComponent<Rigidbody>();
+                Rigidbody rb = inventory.myHandItem.GetComponent<Rigidbody>();
+
+                inventory.myHandItem.transform.SetParent(null);
+                if (inventory.myHandItem.GetComponent<Item>())
                 {
                     Debug.Log("É um item do cenário, sem jogar item!!");
                 }
@@ -372,23 +386,38 @@ public class PlayerMoviment : MonoBehaviour
                     orientation.GetComponent<PlayerCam>().rightArmIK.weight = 0;
                     orientation.GetComponent<PlayerCam>().leftArmIK.weight = 0;
 
-                    rb.AddForce(playerCameraTransform.forward * 2f, ForceMode.Impulse);
-                    rb.AddForce(playerCameraTransform.up * 4f, ForceMode.Impulse);
+                    //quando dropar o item, tira o slot do item selecionado.
+                    if (inventory != null)
+                    {
+                        rb.AddForce(playerCameraTransform.forward * 2f, ForceMode.Impulse);
+                        rb.AddForce(playerCameraTransform.up * 4f, ForceMode.Impulse);
+                        inventory.hotbarItems[inventory.selectedSlot] = null;
+                        inventory.justDroppedItem = true;
+                        inventory.UpdateHotbarUI();
+                    }
+                    else
+                    {
+                        Debug.LogWarning("PlayerInventory não encontrado no objeto.");
+                    }
                 }
-                myHandItem = null;
+                inventory.myHandItem = null;
             }
         }
     }
 
     public void UseItem()
     {
-        if (myHandItem != null)
+        if (inventory.myHandItem != null)
         {
-            if (myHandItem.GetComponent<Food>() != null)
+            if (inventory.myHandItem.GetComponent<Food>() != null)
             {
                 if (Input.GetMouseButtonDown(0))
                 {
-                    Debug.Log("Usando item de comida: " + myHandItem.name);
+                    Debug.Log("Usando item de comida: " + inventory.myHandItem.name);
+                    Destroy(inventory.myHandItem, 0.5f);
+
+                    inventory.hotbarItems[inventory.selectedSlot] = null;
+                    inventory.UpdateHotbarUI();
                 }
             }
             else
@@ -406,7 +435,7 @@ public class PlayerMoviment : MonoBehaviour
                         return;
                     }
 
-                    IUsable usable = myHandItem.GetComponent<IUsable>();
+                    IUsable usable = inventory.myHandItem.GetComponent<IUsable>();
                     if (usable != null)
                     {
                         usable.Use(this.gameObject);

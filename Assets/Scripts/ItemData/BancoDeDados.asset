@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2350cd89a7be82b498ecd107f80b621a, type: 3}
+  m_Name: BancoDeDados
+  m_EditorClassIdentifier: 
+  items:
+  - itemSO: {fileID: 11400000, guid: 4c609f7ddb5615e4bb0af7422690e46b, type: 2}
+    prefab: {fileID: 5167526764925212811, guid: 2779c01dcbeda944983c017afc63a753, type: 3}
+  - itemSO: {fileID: 11400000, guid: 801883f4970d84b4aaafd23d6a35ad6f, type: 2}
+    prefab: {fileID: 308566995987504825, guid: 43accc3f06e905e4dbb2f205788feb58, type: 3}
+  - itemSO: {fileID: 11400000, guid: 4a601781c79091c4aa663e6c28d7f94c, type: 2}
+    prefab: {fileID: 308566995987504825, guid: 43accc3f06e905e4dbb2f205788feb58, type: 3}
+  - itemSO: {fileID: 11400000, guid: 43f289efff8d2c34196c725c9e372997, type: 2}
+    prefab: {fileID: 5167526764925212811, guid: 2779c01dcbeda944983c017afc63a753, type: 3}
+  - itemSO: {fileID: 11400000, guid: 443c6591c11dc4c4c90dc752fd74b651, type: 2}
+    prefab: {fileID: 308566995987504825, guid: 43accc3f06e905e4dbb2f205788feb58, type: 3}

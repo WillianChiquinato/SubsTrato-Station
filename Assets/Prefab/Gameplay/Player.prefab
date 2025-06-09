@@ -1270,37 +1270,6 @@ Transform:
   - {fileID: 5850512025662582623}
   m_Father: {fileID: 6639774998646409361}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &5498511522394669768
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5253329553266582937}
-  m_Layer: 9
-  m_Name: Mira
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5253329553266582937
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5498511522394669768}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.30997556, y: 0.39713123, z: -0.8516508, w: 0.14454396}
-  m_LocalPosition: {x: 0.16, y: 1.8, z: 0.7}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 8124381065502716626}
-  m_LocalEulerAnglesHint: {x: 130, y: 140, z: 0}
 --- !u!1 &5735091618922973812
 GameObject:
   m_ObjectHideFlags: 0
@@ -1890,6 +1859,7 @@ GameObject:
   - component: {fileID: 3702437838407413374}
   - component: {fileID: 733305070196565503}
   - component: {fileID: 6463760592062082186}
+  - component: {fileID: 4572198359774904596}
   - component: {fileID: 2581996144539471000}
   m_Layer: 9
   m_Name: Player
@@ -1914,7 +1884,6 @@ Transform:
   - {fileID: 5254686718208541061}
   - {fileID: 7073758670655623629}
   - {fileID: 499937961908441351}
-  - {fileID: 5253329553266582937}
   - {fileID: 3121570104783671878}
   - {fileID: 171108526646362515}
   - {fileID: 6839084735477362819}
@@ -2037,6 +2006,7 @@ MonoBehaviour:
   knockbackDuration: 0.1
   health: {fileID: 0}
   estamina: 50
+  inventory: {fileID: 0}
 --- !u!114 &733305070196565503
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2070,6 +2040,47 @@ MonoBehaviour:
   cameraTransform: {fileID: 5465559756255591027}
   neck: {fileID: 369506379322183415}
   spine1: {fileID: 1917920566776365850}
+--- !u!114 &4572198359774904596
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7884464899836437688}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0ec9a1c75c6b224a9a3f6d321cac550, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  itemDatabase: {fileID: 11400000, guid: 91e87760fa6ef864badb7b7b38160872, type: 2}
+  player: {fileID: 0}
+  totalSlots: 6
+  selectedSlot: 0
+  slotHighlight: {fileID: 0}
+  slotPositions:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  slotIcons:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  hotbarItems:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  pickUpParent: {fileID: 7813415135695172382}
+  myHandItem: {fileID: 0}
+  justDroppedItem: 0
 --- !u!114 &2581996144539471000
 MonoBehaviour:
   m_ObjectHideFlags: 0

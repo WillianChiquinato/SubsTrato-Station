@@ -7,14 +7,19 @@ using UnityEngine.SceneManagement;
 using System;
 using System.Linq;
 using UnityEngine.UI;
+using TMPro;
 
-public class GameManagerMultiplayer : NetworkBehaviour, INetworkRunnerCallbacks
+public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbacks
 {
     public bool isPlayerReadying = false;
     public Button singlePlayerButton;
     public Button multiplayerButton;
     public Button configButton;
     public Button exitButton;
+    public Button SinglePlayer;
+
+    public TextMeshProUGUI roomCountPlayers;
+    public Button readyButton;
 
     private string GetSceneInfo()
     {
@@ -38,8 +43,6 @@ public class GameManagerMultiplayer : NetworkBehaviour, INetworkRunnerCallbacks
 
     void Awake()
     {
-        DontDestroyOnLoad(gameObject);
-
         if (GetSceneInfo() == SceneRef.FromIndex(0).ToString())
         {
             singlePlayerButton = GameObject.Find("SinglePlayer")?.GetComponent<Button>();
@@ -85,24 +88,24 @@ public class GameManagerMultiplayer : NetworkBehaviour, INetworkRunnerCallbacks
 
     public async Task StartNetwork(GameMode mode)
     {
-        // Pega ou cria o componente NetworkRunner
         var runner = GetComponent<NetworkRunner>();
         if (runner == null)
         {
             runner = gameObject.AddComponent<NetworkRunner>();
         }
 
+        DontDestroyOnLoad(gameObject);
         runner.ProvideInput = true;
 
-        // Adiciona o gerenciador de cenas padrão se não tiver
-        if (GetComponent<NetworkSceneManagerDefault>() == null)
+        var sceneManager = gameObject.GetComponent<NetworkSceneManagerDefault>();
+        if (sceneManager == null)
         {
-            gameObject.AddComponent<NetworkSceneManagerDefault>();
+            sceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>();
         }
 
-        // Registra as callbacks na instância do runner
         runner.AddCallbacks(this);
 
+        // Log
         Debug.Log($"Iniciando jogo no modo: {mode} com a sala: {_roomName}");
 
         var result = await runner.StartGame(new StartGameArgs()
@@ -111,8 +114,8 @@ public class GameManagerMultiplayer : NetworkBehaviour, INetworkRunnerCallbacks
             SessionName = _roomName,
             Scene = SceneRef.FromIndex(_lobbySceneIndex),
             PlayerCount = 4,
+            SceneManager = sceneManager
         });
-
 
         if (!result.Ok)
         {
@@ -124,21 +127,34 @@ public class GameManagerMultiplayer : NetworkBehaviour, INetworkRunnerCallbacks
         }
     }
 
-
     public override void FixedUpdateNetwork()
     {
         if (Runner == null) return;
         if (!Runner.IsServer) return;
 
+        if (GetSceneInfo() == SceneRef.FromIndex(1).ToString())
+        {
+            roomCountPlayers = GameObject.Find("TextoConnect")?.GetComponent<TextMeshProUGUI>();
+            readyButton = GameObject.Find("readyButton")?.GetComponent<Button>();
+        }
+
         if (Runner.IsSceneAuthority)
         {
+            roomCountPlayers.text = $"{Runner.ActivePlayers.Count()} / 4";
+
             Scene currentScene = SceneManager.GetActiveScene();
             SceneRef currentSceneRef = SceneRef.FromIndex(currentScene.buildIndex);
 
             if (currentSceneRef == SceneRef.FromIndex(_lobbySceneIndex) && !_isLoadingGameplayScene)
             {
-                Button readyButton = GameObject.Find("ReadyButton")?.GetComponent<Button>();
-                readyButton.onClick.AddListener(IsplayerReadying);
+                if (readyButton != null)
+                {
+                    readyButton.onClick.AddListener(IsplayerReadying);
+                }
+                else
+                {
+                    Debug.LogWarning("ReadyButton não encontrado na cena.");
+                }
                 int playerCount = Runner.ActivePlayers.Count();
                 if (playerCount >= _minPlayersToStartGame)
                 {
@@ -173,7 +189,7 @@ public class GameManagerMultiplayer : NetworkBehaviour, INetworkRunnerCallbacks
         {
             if (_playerPrefab != null)
             {
-                Vector3 spawnPosition = new Vector3(-2.62f, 0.8f, 6.13f);
+                Vector3 spawnPosition = new Vector3(0.16f, 0.8f, -10f);
                 NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
                 _spawnedCharacters[player] = networkPlayerObject;
                 Debug.Log($"Prefab do jogador spawnado para {player} na cena {GetSceneInfo()}.");
