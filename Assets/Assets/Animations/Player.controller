@@ -1524,6 +1524,9 @@ AnimatorStateTransition:
   - m_ConditionMode: 2
     m_ConditionEvent: IsGround
     m_EventTreshold: 0
+  - m_ConditionMode: 2
+    m_ConditionEvent: StartGame
+    m_EventTreshold: 0
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: 1837987110417229080}
   m_Solo: 0
