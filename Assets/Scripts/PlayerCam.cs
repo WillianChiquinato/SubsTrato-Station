@@ -16,6 +16,9 @@ public class PlayerCam : MonoBehaviour
     public TwoBoneIKConstraint rightArmIK;
     public TwoBoneIKConstraint leftArmIK;
 
+    public Transform cameraAnchor;
+    public float followSpeed = 15f;
+
     void Start()
     {
         player = playerBody.GetComponent<PlayerMoviment>();
@@ -37,6 +40,14 @@ public class PlayerCam : MonoBehaviour
 
         if (!player.canMove)
         {
+            //Ficar parent do cameraAnchor.
+            transform.SetParent(cameraAnchor);
+
+            Vector3 localOffset = new Vector3(0f, 0.13f, -0.45f);
+            transform.localPosition = localOffset;
+
+            // Opcional: reset rotacao local
+            transform.localRotation = Quaternion.identity;
             return;
         }
 
@@ -57,25 +68,35 @@ public class PlayerCam : MonoBehaviour
             rightArmIK.weight = Mathf.Lerp(rightArmIK.weight, 0, Time.deltaTime * 5f);
         }
 
+        Vector3 offset = Vector3.zero;
 
-        // Entrada do mouse
-        mouseX = Input.GetAxis("Mouse X") * sensX * Time.deltaTime;
-        mouseY = Input.GetAxis("Mouse Y") * sensY * Time.deltaTime;
 
-        // Rotação horizontal no corpo
+        if (player.isStealth)
+        {
+            offset = new Vector3(0f, 0.2f, -0.12f);
+        }
+        else
+        {
+            offset = new Vector3(0f, 0.01f, -0.11f);
+        }
+
+        transform.SetParent(null);
+
+        float mouseX = Input.GetAxis("Mouse X") * sensX * Time.deltaTime;
+        float mouseY = Input.GetAxis("Mouse Y") * sensY * Time.deltaTime;
+
+        // rotação do corpo (horizontal)
         playerBody.Rotate(Vector3.up * mouseX);
 
-        // Rotação vertical no alvo (cabeça)
+        // rotação vertical só do mouse
         xRotation -= mouseY;
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
-        if (target)
-        {
-            target.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
 
-            // Agora a câmera segue posição e rotação do alvo
-            Vector3 offset = new Vector3(0f, 0.2f, -0.1f);
-            transform.position = target.position + target.rotation * offset;
-            transform.rotation = target.rotation;
-        }
+        // posição suavizada (só pega a posição do anchor)
+        Vector3 desiredPos = cameraAnchor.position + offset;
+        transform.position = Vector3.Lerp(transform.position, desiredPos, Time.deltaTime * followSpeed);
+
+        // rotação da câmera só pelo mouse, ignorando balanço da cabeça
+        transform.rotation = Quaternion.Euler(xRotation, playerBody.eulerAngles.y, 0f);
     }
 }

@@ -1,6 +1,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum WeaponType
+{
+    Pistol,
+    Shotgun,
+    Target,
+    BaseItem
+}
+
 [CreateAssetMenu(fileName = "NewItemDatabase", menuName = "Inventory/ItemDatabase")]
 public class ItemDatabase : ScriptableObject
 {
@@ -9,6 +17,9 @@ public class ItemDatabase : ScriptableObject
     {
         public ItemSO itemSO;
         public GameObject prefab;
+        public WeaponType type;
+        public int CurrentAmmo;
+        public int MaxAmmo;
     }
 
     public List<ItemEntry> items;

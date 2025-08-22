@@ -65,7 +65,7 @@ public class CharacterMultiplayer : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
-        if (!HasStateAuthority)
+        if (!Object.HasInputAuthority)
         {
             return;
         }

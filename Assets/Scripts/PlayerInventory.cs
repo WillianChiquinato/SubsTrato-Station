@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Linq;
 using Fusion;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -22,10 +24,14 @@ public class PlayerInventory : MonoBehaviour
     public GameObject myHandItem;
     public bool justDroppedItem = false;
 
+    [Header("UI")]
+    public GameObject AmmoSlot;
+
     void Awake()
     {
         ItemDatabase.LoadInstance(itemDatabase);
         player = GetComponent<PlayerMoviment>();
+        AmmoSlot.SetActive(false);
     }
 
     void Start()
@@ -128,6 +134,22 @@ public class PlayerInventory : MonoBehaviour
                 newItem.transform.localRotation = Quaternion.identity;
 
                 myHandItem = newItem;
+
+                if (myHandItem.TryGetComponent<Weapon>(out var gun))
+                {
+                    var itemInDB = itemDatabase.items.FirstOrDefault(x => x.itemSO == selectedItem);
+                    if (itemInDB != null)
+                    {
+                        gun.inventory = this;
+                        gun.Type = itemInDB.type;
+                        gun.MaxAmmo = itemInDB.MaxAmmo;
+                        gun.CurrentAmmo = itemInDB.CurrentAmmo;
+
+                        AmmoSlot.SetActive(true);
+                        AmmoSlot.GetComponentInChildren<TextMeshProUGUI>()
+                            .text = gun.CurrentAmmo + " / " + gun.MaxAmmo;
+                    }
+                }
 
                 Debug.Log("Equipado item na mão: " + selectedItem.itemName);
             }

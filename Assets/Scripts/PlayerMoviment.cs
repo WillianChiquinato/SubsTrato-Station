@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Fusion;
 using Fusion.Sockets;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -125,7 +127,7 @@ public class PlayerMoviment : MonoBehaviour
             {
                 if (estamina > 0 && !isStealth)
                 {
-                    estamina -= 4f * Time.deltaTime;
+                    estamina -= 2f * Time.deltaTime;
                 }
                 else if (isStealth)
                 {
@@ -289,7 +291,16 @@ public class PlayerMoviment : MonoBehaviour
 
     private void movePlayer()
     {
-        moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
+        Vector3 forward = playerCameraTransform.forward;
+        Vector3 right = playerCameraTransform.right;
+
+        forward.y = 0;
+        right.y = 0;
+
+        forward.Normalize();
+        right.Normalize();
+
+        moveDirection = forward * verticalInput + right * horizontalInput;
     }
 
     public void Jump()

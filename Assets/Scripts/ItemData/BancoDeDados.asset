@@ -14,12 +14,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   items:
   - itemSO: {fileID: 11400000, guid: 4c609f7ddb5615e4bb0af7422690e46b, type: 2}
-    prefab: {fileID: 5167526764925212811, guid: 2779c01dcbeda944983c017afc63a753, type: 3}
+    prefab: {fileID: 3296738652517252863, guid: 5962b2729770bf44a922556894d65a56, type: 3}
+    type: 0
+    CurrentAmmo: 12
+    MaxAmmo: 12
   - itemSO: {fileID: 11400000, guid: 801883f4970d84b4aaafd23d6a35ad6f, type: 2}
     prefab: {fileID: 308566995987504825, guid: 43accc3f06e905e4dbb2f205788feb58, type: 3}
+    type: 3
+    CurrentAmmo: 1
+    MaxAmmo: 1
   - itemSO: {fileID: 11400000, guid: 4a601781c79091c4aa663e6c28d7f94c, type: 2}
     prefab: {fileID: 308566995987504825, guid: 43accc3f06e905e4dbb2f205788feb58, type: 3}
+    type: 3
+    CurrentAmmo: 1
+    MaxAmmo: 1
   - itemSO: {fileID: 11400000, guid: 43f289efff8d2c34196c725c9e372997, type: 2}
-    prefab: {fileID: 5167526764925212811, guid: 2779c01dcbeda944983c017afc63a753, type: 3}
+    prefab: {fileID: 3296738652517252863, guid: 5962b2729770bf44a922556894d65a56, type: 3}
+    type: 1
+    CurrentAmmo: 2
+    MaxAmmo: 2
   - itemSO: {fileID: 11400000, guid: 443c6591c11dc4c4c90dc752fd74b651, type: 2}
     prefab: {fileID: 308566995987504825, guid: 43accc3f06e905e4dbb2f205788feb58, type: 3}
+    type: 3
+    CurrentAmmo: 1
+    MaxAmmo: 1
