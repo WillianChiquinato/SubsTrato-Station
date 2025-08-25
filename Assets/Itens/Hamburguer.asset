@@ -10,8 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 982ec3615e96daf47a6b9c5171335ca2, type: 3}
-  m_Name: Comida
+  m_Name: Hamburguer
   m_EditorClassIdentifier: 
   itemType: 1
-  itemName: ComidaFranguin
-  itemIcon: {fileID: 21300000, guid: f8b3194f397d8934697497c4c07cf47e, type: 3}
+  itemName: Hamburguer
+  itemIcon: {fileID: 21300000, guid: a2cab3b5dad913a48ae17e3bfd1794f9, type: 3}

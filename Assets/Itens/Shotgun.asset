@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Shotgun
   m_EditorClassIdentifier: 
   itemType: 0
-  itemName: PistolaTeste
-  itemIcon: {fileID: 21300000, guid: 1cb1b1bf7bfc6574a95f9a2bc7421c60, type: 3}
+  itemName: ShotGun
+  itemIcon: {fileID: 21300000, guid: 4a8881122e325e244800edc243bfc570, type: 3}

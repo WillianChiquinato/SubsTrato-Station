@@ -31,4 +31,25 @@ public class EstaminaBar : MonoBehaviour
             Debug.Log("Barra de Estamina falhada " + gameObject.name);
         }
     }
+
+    public void Boost(int amount, float duration)
+    {
+        if (estaminaDoPlayer != null)
+        {
+            estaminaDoPlayer.estamina += amount;
+            if (estaminaDoPlayer.estamina > maxEstamina)
+            {
+                estaminaDoPlayer.estamina = maxEstamina;
+            }
+            Invoke(nameof(ResetEstamina), duration);
+        }
+    }
+
+    private void ResetEstamina()
+    {
+        if (estaminaDoPlayer != null)
+        {
+            estaminaDoPlayer.estamina = maxEstamina;
+        }
+    }
 }

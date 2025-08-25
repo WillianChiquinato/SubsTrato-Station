@@ -221,16 +221,16 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -6922793697723135513, guid: b14f74c04427a6e45a0a44941b36f578, type: 3}
-  - {fileID: -6629797300637803691, guid: b14f74c04427a6e45a0a44941b36f578, type: 3}
-  - {fileID: -2813467912831258332, guid: b14f74c04427a6e45a0a44941b36f578, type: 3}
-  - {fileID: -8274133419916619345, guid: b14f74c04427a6e45a0a44941b36f578, type: 3}
-  - {fileID: -3522955778539423533, guid: b14f74c04427a6e45a0a44941b36f578, type: 3}
-  - {fileID: -876546973899608171, guid: b14f74c04427a6e45a0a44941b36f578, type: 3}
-  - {fileID: 9185737683893222716, guid: b14f74c04427a6e45a0a44941b36f578, type: 3}
-  - {fileID: -3846018093981099296, guid: b14f74c04427a6e45a0a44941b36f578, type: 3}
-  - {fileID: 4874126678125670354, guid: b14f74c04427a6e45a0a44941b36f578, type: 3}
-  - {fileID: -6478536213147159724, guid: b14f74c04427a6e45a0a44941b36f578, type: 3}
+  - {fileID: 2100000, guid: 0e8a421a82fdc5245b8a7ff97217b2da, type: 2}
+  - {fileID: 2100000, guid: 0e8a421a82fdc5245b8a7ff97217b2da, type: 2}
+  - {fileID: 2100000, guid: 0e8a421a82fdc5245b8a7ff97217b2da, type: 2}
+  - {fileID: 2100000, guid: 0e8a421a82fdc5245b8a7ff97217b2da, type: 2}
+  - {fileID: 2100000, guid: 0e8a421a82fdc5245b8a7ff97217b2da, type: 2}
+  - {fileID: 2100000, guid: 0e8a421a82fdc5245b8a7ff97217b2da, type: 2}
+  - {fileID: 2100000, guid: 0e8a421a82fdc5245b8a7ff97217b2da, type: 2}
+  - {fileID: 2100000, guid: 0e8a421a82fdc5245b8a7ff97217b2da, type: 2}
+  - {fileID: 2100000, guid: 0e8a421a82fdc5245b8a7ff97217b2da, type: 2}
+  - {fileID: 2100000, guid: 0e8a421a82fdc5245b8a7ff97217b2da, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -340,6 +340,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ed7662ee7ba2544987f5c8e496966fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  shootCooldown: 0.7
   <OnUse>k__BackingField:
     m_PersistentCalls:
       m_Calls:
@@ -370,9 +371,9 @@ MonoBehaviour:
   inventory: {fileID: 0}
   CurrentAmmo: 0
   MaxAmmo: 0
-  delayTarget: 0.7
-  delay: 0
   pointBullet: {fileID: 6331216880199795373}
+  Offset: {x: 0, y: 0, z: 0.05}
+  AimOffsetRotation: {x: 0, y: 0, z: 0.3131638, w: 0.9496991}
 --- !u!114 &2216630561623687294
 MonoBehaviour:
   m_ObjectHideFlags: 0

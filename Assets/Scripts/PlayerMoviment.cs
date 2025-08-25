@@ -52,7 +52,6 @@ public class PlayerMoviment : MonoBehaviour
     public GameObject pickUpUI;
     private RaycastHit hit;
 
-    public Transform pickUpParent;
     public GameObject myHandItem;
     public GameObject ItemFlutuante;
     public float itemFlutuanteDistance = 2f;
@@ -66,6 +65,7 @@ public class PlayerMoviment : MonoBehaviour
 
     [Header("Health e HealthBar")]
     [HideInInspector] public Health health;
+    [HideInInspector] public EstaminaBar estaminaBar;
     public float estamina = 50f;
 
     public PlayerInventory inventory;
@@ -96,6 +96,7 @@ public class PlayerMoviment : MonoBehaviour
 
         animator = GetComponent<Animator>();
         health = GetComponent<Health>();
+        estaminaBar = GetComponent<EstaminaBar>();
 
         animator.SetBool("StartGame", true);
     }
@@ -218,12 +219,15 @@ public class PlayerMoviment : MonoBehaviour
                     HightLights highlight = hit.collider.GetComponent<HightLights>();
                     if (highlight != null)
                     {
-                        highlight.ToggleHighlight(true);
-                        pickUpUI.SetActive(true);
-
-                        if (Input.GetKeyDown(KeyCode.E))
+                        if (inventory.myHandItem == null)
                         {
-                            StartPickUp();
+                            highlight.ToggleHighlight(true);
+                            pickUpUI.SetActive(true);
+
+                            if (Input.GetKeyDown(KeyCode.E))
+                            {
+                                StartPickUp();
+                            }
                         }
                     }
                 }
@@ -333,6 +337,8 @@ public class PlayerMoviment : MonoBehaviour
                     Debug.Log("Animação sem crounch");
                     Invoke(nameof(PickUp), 0.7f);
                 }
+
+                pickUpUI.SetActive(false);
             }
             else if (hit.collider.GetComponent<Item>())
             {
@@ -346,6 +352,7 @@ public class PlayerMoviment : MonoBehaviour
                 }
 
                 ItemFlutuante.transform.SetParent(null);
+                pickUpUI.SetActive(false);
             }
         }
     }
@@ -454,7 +461,11 @@ public class PlayerMoviment : MonoBehaviour
                 if (Input.GetMouseButtonDown(0))
                 {
                     Debug.Log("Usando item de comida: " + inventory.myHandItem.name);
-                    Destroy(inventory.myHandItem, 0.5f);
+                    IUsable usable = inventory.myHandItem.GetComponent<IUsable>();
+                    if (usable != null)
+                    {
+                        usable.Use(this.gameObject);
+                    }
 
                     inventory.hotbarItems[inventory.selectedSlot] = null;
                     inventory.UpdateHotbarUI();
@@ -468,12 +479,12 @@ public class PlayerMoviment : MonoBehaviour
                     aimAnimActive = !aimAnimActive;
                     if (aimAnimActive)
                     {
-                        inventory.myHandItem.transform.localPosition = Vector3.zero;
-                        inventory.myHandItem.transform.localRotation = Quaternion.Euler(0, 0, 36.50f);
+                        inventory.myHandItem.transform.localPosition = Vector3.zero + inventory.myHandItem.GetComponent<Weapon>().AimOffset;
+                        inventory.myHandItem.transform.localRotation = inventory.myHandItem.GetComponent<Weapon>().AimOffsetRotation;
                     }
                     else
                     {
-                        inventory.myHandItem.transform.localPosition = Vector3.zero;
+                        inventory.myHandItem.transform.localPosition = Vector3.zero + inventory.myHandItem.GetComponent<Weapon>().Offset;
                         inventory.myHandItem.transform.localRotation = Quaternion.identity;
                     }
                 }
@@ -499,6 +510,22 @@ public class PlayerMoviment : MonoBehaviour
     public void ToggleAim()
     {
         aimActive = !aimActive;
+    }
+
+    public void Heal(int amount)
+    {
+        if (health != null)
+        {
+            health.Heal(amount);
+        }
+    }
+
+    public void BoostStamina(int amount, float duration)
+    {
+        if (estaminaBar != null)
+        {
+            estaminaBar.Boost(amount, duration);
+        }
     }
 
     public void ApplyKnockback(Vector3 direction, float force)

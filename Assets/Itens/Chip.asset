@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Chip
   m_EditorClassIdentifier: 
   itemType: 2
-  itemName: ChipGenerator
-  itemIcon: {fileID: 21300000, guid: 58f8d5c3c5df6ee419821a5c345ebed1, type: 3}
+  itemName: ChipGerador
+  itemIcon: {fileID: 21300000, guid: caafea9b767a77f4fa192821a33fee21, type: 3}

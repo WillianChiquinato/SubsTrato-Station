@@ -5,8 +5,10 @@ using UnityEngine.Events;
 
 public class Weapon : MonoBehaviour, IUsable
 {
+    private float lastShootTime = -999f;
+    [SerializeField] private float shootCooldown = 0.7f;
     [field: SerializeField] public UnityEvent OnUse { get; private set; }
-    public PlayerInventory inventory;
+    [HideInInspector] public PlayerInventory inventory;
     public ItemClass itemClass { get; private set; }
     public WeaponType Type { get; set; }
     public int CurrentAmmo;
@@ -15,6 +17,9 @@ public class Weapon : MonoBehaviour, IUsable
     private Animator anim;
     public Transform pointBullet;
     private PlayerMoviment player;
+    public Vector3 Offset;
+    public Vector3 AimOffset;
+    public Quaternion AimOffsetRotation;
 
     void Start()
     {
@@ -36,6 +41,9 @@ public class Weapon : MonoBehaviour, IUsable
 
     public void Use(GameObject actor)
     {
+        if (Time.time - lastShootTime < shootCooldown)
+            return;
+
         switch (Type)
         {
             case WeaponType.Pistol:
@@ -48,6 +56,7 @@ public class Weapon : MonoBehaviour, IUsable
                 UseTarget();
                 break;
         }
+        lastShootTime = Time.time;
     }
 
     public void UsePistol()

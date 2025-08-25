@@ -133,6 +133,11 @@ public class PlayerInventory : MonoBehaviour
                 newItem.transform.localPosition = Vector3.zero;
                 newItem.transform.localRotation = Quaternion.identity;
 
+                if (newItem.TryGetComponent<Weapon>(out var weapon))
+                {
+                    newItem.transform.localPosition += weapon.Offset;
+                }
+
                 myHandItem = newItem;
 
                 if (myHandItem.TryGetComponent<Weapon>(out var gun))

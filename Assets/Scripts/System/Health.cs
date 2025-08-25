@@ -42,4 +42,19 @@ public class Health : MonoBehaviour
             }
         }
     }
+
+    public void Heal(int amount)
+    {
+        if (isAlive && !isInvicible)
+        {
+            health += amount;
+            isInvicible = true;
+
+            if (health > 100)
+            {
+                health = 100;
+                Debug.Log("Health fully restored");
+            }
+        }
+    }
 }

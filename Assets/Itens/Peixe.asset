@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemType: 1
   itemName: Peixe
-  itemIcon: {fileID: 21300000, guid: 335be258f6aa79e47938c67bc5428f0d, type: 3}
+  itemIcon: {fileID: 21300000, guid: 200f8cfc1970c1148bdadcbd44c006fd, type: 3}
