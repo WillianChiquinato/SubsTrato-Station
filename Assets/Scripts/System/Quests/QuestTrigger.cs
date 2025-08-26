@@ -21,10 +21,17 @@ public class QuestTrigger : MonoBehaviour
 {
     [Header("Texto da Quest")]
     public Quest quest;
+    public Animator animator;
 
     public void TriggerQuest()
     {
-        QuestSystem.instance.StartQuest(quest);
+        QuestSystem.instance.StartQuest(quest, this);
         Debug.Log("Quest iniciada!");
+    }
+
+    public void EndQuest()
+    {
+        animator.SetBool("OpenTrigger", true);
+        Debug.Log("Quest finalizada!");
     }
 }

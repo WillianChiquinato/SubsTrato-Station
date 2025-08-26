@@ -9,7 +9,7 @@ public class QuestSystem : MonoBehaviour
 {
     public static QuestSystem instance;
 
-    public QuestTrigger[] activeQuests;
+    public QuestTrigger currentQuestTrigger;
     public TextMeshProUGUI questTextArea;
     public QuestTextos linhaAtual;
     public Queue<QuestTextos> linhas;
@@ -20,6 +20,7 @@ public class QuestSystem : MonoBehaviour
 
     public bool questArea = false;
     public bool isQuestAtivo = false;
+    public bool questEnding = false;
 
     Animator animator;
 
@@ -32,10 +33,9 @@ public class QuestSystem : MonoBehaviour
     {
         animator = GetComponent<Animator>();
         linhas = new Queue<QuestTextos>();
-        activeQuests = FindObjectsByType<QuestTrigger>(FindObjectsSortMode.None);
     }
 
-    public void StartQuest(Quest quest)
+    public void StartQuest(Quest quest, QuestTrigger trigger)
     {
         questArea = true;
         isQuestAtivo = true;
@@ -48,6 +48,7 @@ public class QuestSystem : MonoBehaviour
             linhas.Enqueue(questTextos);
         }
 
+        currentQuestTrigger = trigger;
         DisplayNextLinha();
     }
 
@@ -74,6 +75,7 @@ public class QuestSystem : MonoBehaviour
 
     public void EndQuest()
     {
+        questEnding = true;
         isQuestAtivo = false;
         animator.SetBool("QuestStart", false);
 
@@ -107,6 +109,10 @@ public class QuestSystem : MonoBehaviour
                 {
                     Debug.Log("Quest FINALIZADA!!");
                     EndQuest();
+                    if (currentQuestTrigger != null)
+                    {
+                        currentQuestTrigger.EndQuest();
+                    }
                     return;
                 }
                 questArea = false;

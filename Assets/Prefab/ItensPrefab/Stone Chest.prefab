@@ -430,6 +430,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3350719153588629744}
   - component: {fileID: 3908414607437048715}
+  - component: {fileID: 5542841282527521299}
   m_Layer: 0
   m_Name: Stone Chest
   m_TagString: Untagged
@@ -476,6 +477,28 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 3.7225628, y: 4.1495185, z: 3.2429535}
   m_Center: {x: 0.1953109, y: 1.574759, z: -0.03391996}
+--- !u!95 &5542841282527521299
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5501194107936088300}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: e5fbef6d74170e24e995f91cb376314a, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &6670804174802384000
 GameObject:
   m_ObjectHideFlags: 0
@@ -794,6 +817,8 @@ MonoBehaviour:
         \xE1gua, mas n\xE3o peixes. O que sou?\u2019\n\nPara prosseguir, rresolva
         o enigma e acerte o alvo."
       respostaQuest: Mapa
+      Similar: 
+  animator: {fileID: 5542841282527521299}
 --- !u!65 &960088213070092373
 BoxCollider:
   m_ObjectHideFlags: 0

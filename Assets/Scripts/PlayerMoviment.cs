@@ -119,7 +119,7 @@ public class PlayerMoviment : MonoBehaviour
             {
                 animator.applyRootMotion = true;
                 canMove = false;
-                if (animator.GetCurrentAnimatorStateInfo(0).IsName("StartGame") && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.9f)
+                if (animator.GetCurrentAnimatorStateInfo(0).IsName("StartGame") && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.95f)
                 {
                     animator.SetBool("StartGame", false);
                     canMove = true;
@@ -248,7 +248,7 @@ public class PlayerMoviment : MonoBehaviour
                             {
                                 if (hit.collider.CompareTag("Quest"))
                                 {
-                                    QuestSystem.instance.StartQuest(hit.collider.GetComponent<QuestTrigger>().quest);
+                                    hit.collider.GetComponent<QuestTrigger>().TriggerQuest();
                                 }
                                 else
                                 {
@@ -421,7 +421,6 @@ public class PlayerMoviment : MonoBehaviour
 
         Debug.Log("Item pego com sucesso!");
     }
-
     public void DropItem()
     {
         if (Input.GetKeyDown(KeyCode.Q))
