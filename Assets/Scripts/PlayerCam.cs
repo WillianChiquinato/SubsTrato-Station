@@ -18,6 +18,7 @@ public class PlayerCam : MonoBehaviour
 
     public Transform cameraAnchor;
     public float followSpeed = 15f;
+    private bool wasLocked = true;
 
     void Start()
     {
@@ -40,15 +41,25 @@ public class PlayerCam : MonoBehaviour
 
         if (!player.canMove)
         {
-            //Ficar parent do cameraAnchor.
+            // Enquanto não pode se mover → só segue o anchor sem resetar posição bruscamente
             transform.SetParent(cameraAnchor);
 
             Vector3 localOffset = new Vector3(0f, 0.13f, -0.45f);
-            transform.localPosition = localOffset;
+            transform.localPosition = Vector3.Lerp(transform.localPosition, localOffset, Time.deltaTime * 5f);
 
-            // Opcional: reset rotacao local
             transform.localRotation = Quaternion.identity;
+
+            wasLocked = true;
             return;
+        }
+        else
+        {
+            if (wasLocked)
+            {
+                // Saiu da intro → "solta" a câmera mantendo posição/rotação atuais
+                transform.SetParent(null);
+                wasLocked = false;
+            }
         }
 
         if (player.isPickingUp)

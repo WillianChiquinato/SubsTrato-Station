@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 7135017438388372430}
   - component: {fileID: 9216925130911435114}
   - component: {fileID: 8934687094396689169}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Peixe - Food
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -31,13 +31,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6866001779989561456}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071067}
+  m_LocalRotation: {x: -0.7069834, y: 0, z: 0, w: 0.7072302}
   m_LocalPosition: {x: -1.72, y: 1.03, z: 2.93}
   m_LocalScale: {x: 20, y: 20, z: 20}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -89.98, y: 0, z: 0}
 --- !u!33 &6355721416492235842
 MeshFilter:
   m_ObjectHideFlags: 0

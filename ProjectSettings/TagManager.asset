@@ -6,6 +6,8 @@ TagManager:
   tags:
   - Boss
   - Cadeira
+  - Quest
+  - Target
   layers:
   - Default
   - TransparentFX

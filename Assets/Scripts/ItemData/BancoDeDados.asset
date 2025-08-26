@@ -31,10 +31,15 @@ MonoBehaviour:
   - itemSO: {fileID: 11400000, guid: 43f289efff8d2c34196c725c9e372997, type: 2}
     prefab: {fileID: 7663748750715224235, guid: b7247ae4cbe0a9e4e8ff9f01ed037510, type: 3}
     type: 1
-    CurrentAmmo: 0
+    CurrentAmmo: 2
     MaxAmmo: 2
   - itemSO: {fileID: 11400000, guid: 443c6591c11dc4c4c90dc752fd74b651, type: 2}
     prefab: {fileID: 308566995987504825, guid: 43accc3f06e905e4dbb2f205788feb58, type: 3}
     type: 3
+    CurrentAmmo: 1
+    MaxAmmo: 1
+  - itemSO: {fileID: 11400000, guid: f00e88985165a914283532a9010f107a, type: 2}
+    prefab: {fileID: 6202946038836479057, guid: 198dd53f0b111264990f8194902b84f5, type: 3}
+    type: 2
     CurrentAmmo: 1
     MaxAmmo: 1

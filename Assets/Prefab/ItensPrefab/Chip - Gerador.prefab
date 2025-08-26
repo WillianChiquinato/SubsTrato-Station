@@ -12,7 +12,10 @@ GameObject:
   - component: {fileID: 3688089968368690803}
   - component: {fileID: 5167290710053917051}
   - component: {fileID: 3587822158067549898}
-  m_Layer: 0
+  - component: {fileID: 1491413364477389397}
+  - component: {fileID: 3644199681265055690}
+  - component: {fileID: 7229391428162754734}
+  m_Layer: 6
   m_Name: Chip - Gerador
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -27,13 +30,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1205828325972953908}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071067}
+  m_LocalRotation: {x: -0.7069834, y: 0, z: 0, w: 0.7072302}
   m_LocalPosition: {x: -4.46, y: 0.67, z: 3.13}
   m_LocalScale: {x: 15, y: 14.998926, z: 14.998926}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -89.98, y: 0, z: 0}
 --- !u!33 &3688089968368690803
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -109,3 +112,45 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.04859946, y: 0.02600418, z: 0.0041261977}
   m_Center: {x: -0.008674752, y: -0.00009631876, z: 0.00042328108}
+--- !u!114 &1491413364477389397
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1205828325972953908}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68f2d07353484424e8dcb86d74f202c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  renderers:
+  - {fileID: 5167290710053917051}
+  color: {r: 1, g: 1, b: 1, a: 1}
+--- !u!114 &3644199681265055690
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1205828325972953908}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e9bd489a23f2d14a8d5685f9cec3b33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &7229391428162754734
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1205828325972953908}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ad37bf929208e942a932533cc02dcff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  itemSO: {fileID: 11400000, guid: 443c6591c11dc4c4c90dc752fd74b651, type: 2}
+  projectilePrefab: {fileID: 0}
+  projectileSpeed: 0

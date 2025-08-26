@@ -361,7 +361,7 @@ SkinnedMeshRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5248436274578260506}
   m_Enabled: 1
-  m_CastShadows: 1
+  m_CastShadows: 0
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
@@ -452,6 +452,7 @@ Transform:
   m_Children:
   - {fileID: 429529257265883731}
   - {fileID: 1641009459046389341}
+  - {fileID: 6444099828148930589}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &3908414607437048715
@@ -665,6 +666,155 @@ Transform:
   - {fileID: 7813568006445603892}
   m_Father: {fileID: 5623217788775620550}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7521696675052256999
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6444099828148930589}
+  - component: {fileID: 4186754717959051353}
+  - component: {fileID: 7219763271052662026}
+  - component: {fileID: 417343889158493694}
+  - component: {fileID: 4368673096050695763}
+  - component: {fileID: 960088213070092373}
+  m_Layer: 6
+  m_Name: BookQuest
+  m_TagString: Quest
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6444099828148930589
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7521696675052256999}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.02, y: 2.33, z: 1.72}
+  m_LocalScale: {x: 200, y: 200, z: 200}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 3350719153588629744}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &4186754717959051353
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7521696675052256999}
+  m_Mesh: {fileID: 7219232401503515723, guid: 2cb6846f362340b4199b3fac1ff70f75, type: 3}
+--- !u!23 &7219763271052662026
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7521696675052256999}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: -354735261257320667, guid: 2cb6846f362340b4199b3fac1ff70f75, type: 3}
+  - {fileID: -6796508776286440829, guid: 2cb6846f362340b4199b3fac1ff70f75, type: 3}
+  - {fileID: -9163163211885300892, guid: 2cb6846f362340b4199b3fac1ff70f75, type: 3}
+  - {fileID: -469649698186968152, guid: 2cb6846f362340b4199b3fac1ff70f75, type: 3}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &417343889158493694
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7521696675052256999}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68f2d07353484424e8dcb86d74f202c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  renderers:
+  - {fileID: 7219763271052662026}
+  color: {r: 1, g: 1, b: 1, a: 1}
+--- !u!114 &4368673096050695763
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7521696675052256999}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e89ea4aecce8e2458591d7aba23732c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  quest:
+    dialogoTextos:
+    - tituloQuest: "O Guardi\xE3o da Chave"
+      linhaTexto: "Descri\xE7\xE3o:\n\u201C\xC0 sua frente, uma porta antiga trancada
+        por magia. Um guardi\xE3o invis\xEDvel surge e faz uma pergunta:\n\u2018Tenho
+        cidades, mas n\xE3o casas. Tenho montanhas, mas n\xE3o \xE1rvores. Tenho
+        \xE1gua, mas n\xE3o peixes. O que sou?\u2019\n\nPara prosseguir, rresolva
+        o enigma e acerte o alvo."
+      respostaQuest: Mapa
+--- !u!65 &960088213070092373
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7521696675052256999}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.0048290123, y: 0.0057948143, z: 0.0014075565}
+  m_Center: {x: -1.1641531e-10, y: -0.0000000027939677, z: 0.0006453127}
 --- !u!1 &9045900024424073638
 GameObject:
   m_ObjectHideFlags: 0

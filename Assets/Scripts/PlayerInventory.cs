@@ -136,6 +136,7 @@ public class PlayerInventory : MonoBehaviour
                 if (newItem.TryGetComponent<Weapon>(out var weapon))
                 {
                     newItem.transform.localPosition += weapon.Offset;
+                    newItem.transform.localRotation = weapon.OffsetRotation;
                 }
 
                 myHandItem = newItem;
@@ -150,9 +151,18 @@ public class PlayerInventory : MonoBehaviour
                         gun.MaxAmmo = itemInDB.MaxAmmo;
                         gun.CurrentAmmo = itemInDB.CurrentAmmo;
 
-                        AmmoSlot.SetActive(true);
-                        AmmoSlot.GetComponentInChildren<TextMeshProUGUI>()
-                            .text = gun.CurrentAmmo + " / " + gun.MaxAmmo;
+                        if (!gun.GetComponent<ItemArremessavel>())
+                        {
+                            AmmoSlot.SetActive(true);
+                            AmmoSlot.GetComponentInChildren<TextMeshProUGUI>()
+                                .text = gun.CurrentAmmo + " / " + gun.MaxAmmo;
+                        }
+                        else
+                        {
+                            AmmoSlot.SetActive(true);
+                            AmmoSlot.GetComponentInChildren<TextMeshProUGUI>()
+                                .text = "<Arremessar>";
+                        }
                     }
                 }
 
@@ -162,6 +172,10 @@ public class PlayerInventory : MonoBehaviour
             {
                 Debug.LogWarning("Prefab não encontrado para item: " + selectedItem.name);
             }
+        }
+        else
+        {
+            AmmoSlot.SetActive(false);
         }
     }
 

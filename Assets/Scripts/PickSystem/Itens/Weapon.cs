@@ -18,6 +18,7 @@ public class Weapon : MonoBehaviour, IUsable
     public Transform pointBullet;
     private PlayerMoviment player;
     public Vector3 Offset;
+    public Quaternion OffsetRotation;
     public Vector3 AimOffset;
     public Quaternion AimOffsetRotation;
 
@@ -26,17 +27,20 @@ public class Weapon : MonoBehaviour, IUsable
         itemClass = GetComponent<ItemClass>();
         anim = GetComponent<Animator>();
         player = FindFirstObjectByType<PlayerMoviment>();
-
-        UpdateInventoryAmmo();
     }
 
     void Update()
     {
-        if (CurrentAmmo < 1)
+        if (WeaponType.Target != Type)
         {
-            anim.SetBool("Ammo", false);
-            anim.SetTrigger("NoAmmo");
+            if (CurrentAmmo < 1)
+            {
+                anim.SetBool("Ammo", false);
+                anim.SetTrigger("NoAmmo");
+            }
         }
+
+        Debug.Log("Tipo de arma: " + Type);
     }
 
     public void Use(GameObject actor)
@@ -86,6 +90,7 @@ public class Weapon : MonoBehaviour, IUsable
     public void UseTarget()
     {
         OnUse?.Invoke();
+        Debug.Log("Target weapon used");
     }
 
     public void ShootProjectile()
@@ -147,6 +152,8 @@ public class Weapon : MonoBehaviour, IUsable
     {
         var itemInDB = inventory.itemDatabase.items
             .FirstOrDefault(x => x.itemSO == itemClass.itemSO);
+
+        Type = itemInDB.type;
 
         GameObject AmmoSlot = inventory.AmmoSlot;
         TextMeshProUGUI ammoText = AmmoSlot.GetComponentInChildren<TextMeshProUGUI>();

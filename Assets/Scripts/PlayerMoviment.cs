@@ -63,6 +63,8 @@ public class PlayerMoviment : MonoBehaviour
     private float knockbackTimer;
     private Vector3 knockbackVelocity;
 
+    public bool Arremessar = false;
+
     [Header("Health e HealthBar")]
     [HideInInspector] public Health health;
     [HideInInspector] public EstaminaBar estaminaBar;
@@ -109,6 +111,7 @@ public class PlayerMoviment : MonoBehaviour
         animator.SetFloat("yVelocity", velocity.y);
         animator.SetBool("IsAlive", health.isAlive);
         animator.SetBool("AimPistol", aimAnimActive);
+        animator.SetBool("Throw", Arremessar);
 
         if (health.isAlive)
         {
@@ -116,11 +119,28 @@ public class PlayerMoviment : MonoBehaviour
             {
                 animator.applyRootMotion = true;
                 canMove = false;
-                if (animator.GetCurrentAnimatorStateInfo(0).IsName("StartGame") && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.7f)
+                if (animator.GetCurrentAnimatorStateInfo(0).IsName("StartGame") && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.9f)
                 {
                     animator.SetBool("StartGame", false);
                     canMove = true;
                     animator.applyRootMotion = false;
+                }
+            }
+
+            if (QuestSystem.instance != null && QuestSystem.instance.questArea)
+            {
+                if (QuestSystem.instance.isQuestAtivo)
+                {
+                    canMove = false;
+                    //Liberar movimento do mouse.
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
+                }
+                else
+                {
+                    canMove = true;
+                    Cursor.lockState = CursorLockMode.Locked;
+                    Cursor.visible = false;
                 }
             }
 
@@ -226,7 +246,14 @@ public class PlayerMoviment : MonoBehaviour
 
                             if (Input.GetKeyDown(KeyCode.E))
                             {
-                                StartPickUp();
+                                if (hit.collider.CompareTag("Quest"))
+                                {
+                                    QuestSystem.instance.StartQuest(hit.collider.GetComponent<QuestTrigger>().quest);
+                                }
+                                else
+                                {
+                                    StartPickUp();
+                                }
                             }
                         }
                     }
@@ -473,33 +500,57 @@ public class PlayerMoviment : MonoBehaviour
             }
             else
             {
-                if (Input.GetMouseButtonDown(1))
+                if (inventory.myHandItem.GetComponent<ItemArremessavel>())
                 {
-                    Invoke(nameof(ToggleAim), 0.5f);
-                    aimAnimActive = !aimAnimActive;
-                    if (aimAnimActive)
+                    //Segurar botao direito.
+                    if (Input.GetMouseButton(1))
                     {
-                        inventory.myHandItem.transform.localPosition = Vector3.zero + inventory.myHandItem.GetComponent<Weapon>().AimOffset;
-                        inventory.myHandItem.transform.localRotation = inventory.myHandItem.GetComponent<Weapon>().AimOffsetRotation;
+                        Arremessar = true;
                     }
-                    else
+
+                    if (Input.GetMouseButtonUp(1))
                     {
-                        inventory.myHandItem.transform.localPosition = Vector3.zero + inventory.myHandItem.GetComponent<Weapon>().Offset;
-                        inventory.myHandItem.transform.localRotation = Quaternion.identity;
+                        Arremessar = false;
+                        Destroy(inventory.myHandItem);
+
+                        myHandItem = null;
+                        inventory.myHandItem = null;
+                        inventory.hotbarItems[inventory.selectedSlot] = null;
+                        inventory.justDroppedItem = true;
+                        inventory.UpdateHotbarUI();
+                        Debug.Log("Item arremessável destruído.");
                     }
                 }
-
-                if (Input.GetMouseButtonDown(0) && aimActive)
+                else
                 {
-                    if (isStealth && isMoving)
+                    if (Input.GetMouseButtonDown(1))
                     {
-                        return;
+                        Invoke(nameof(ToggleAim), 0.5f);
+                        aimAnimActive = !aimAnimActive;
+                        if (aimAnimActive)
+                        {
+                            inventory.myHandItem.transform.localPosition = Vector3.zero + inventory.myHandItem.GetComponent<Weapon>().AimOffset;
+                            inventory.myHandItem.transform.localRotation = inventory.myHandItem.GetComponent<Weapon>().AimOffsetRotation;
+                        }
+                        else
+                        {
+                            inventory.myHandItem.transform.localPosition = Vector3.zero + inventory.myHandItem.GetComponent<Weapon>().Offset;
+                            inventory.myHandItem.transform.localRotation = inventory.myHandItem.GetComponent<Weapon>().OffsetRotation;
+                        }
                     }
 
-                    IUsable usable = inventory.myHandItem.GetComponent<IUsable>();
-                    if (usable != null)
+                    if (Input.GetMouseButtonDown(0) && aimActive)
                     {
-                        usable.Use(this.gameObject);
+                        if (isStealth && isMoving)
+                        {
+                            return;
+                        }
+
+                        IUsable usable = inventory.myHandItem.GetComponent<IUsable>();
+                        if (usable != null)
+                        {
+                            usable.Use(this.gameObject);
+                        }
                     }
                 }
             }
