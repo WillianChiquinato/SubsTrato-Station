@@ -283,9 +283,16 @@ public class PlayerMoviment : MonoBehaviour
                     }
                 }
             }
+            else
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                isMoving = false;
+                horizontalInput = 0;
+                verticalInput = 0;
+            }
 
             // Movement and gravity
-            movePlayer();
+                movePlayer();
 
             if (isGrounded && velocity.y < 0)
             {
@@ -297,7 +304,9 @@ public class PlayerMoviment : MonoBehaviour
             Vector3 move = moveDirection * moveSpeed;
 
             if (!isGrounded)
+            {
                 move *= airControlMultiplier;
+            }
 
             move.y = velocity.y;
             character.Move(move * Time.deltaTime);

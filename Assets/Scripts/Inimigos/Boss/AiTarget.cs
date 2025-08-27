@@ -11,6 +11,7 @@ public class AiTarget : MonoBehaviour
 
     private NavMeshAgent agent;
     private Animator animator;
+    private Health health;
     [SerializeField] private float distanceToTarget;
 
     [Header("States")]
@@ -40,6 +41,7 @@ public class AiTarget : MonoBehaviour
         animator = GetComponent<Animator>();
         damageCollider = GetComponentInChildren<SphereCollider>();
         damageCollider.enabled = false;
+        health = GetComponent<Health>();
 
         //Debug por enquanto.
         // target = GameObject.FindGameObjectWithTag("Player").transform;
@@ -52,69 +54,90 @@ public class AiTarget : MonoBehaviour
         animator.SetBool("Patrulha", IsPatrolling);
         animator.SetBool("Target", targetBool);
 
-        if (target != null)
+        if (health.isAlive)
         {
-            if (!target.GetComponent<Health>().isAlive)
+            if (animator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
             {
-                target = null;
-            }
-        }
+                if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.5f && animator.GetCurrentAnimatorStateInfo(0).normalizedTime <= 0.8f)
+                {
+                    damageCollider.enabled = true;
+                }
+                else
+                {
+                    damageCollider.enabled = false;
+                }
 
-        if (animator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
-        {
-            if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.5f && animator.GetCurrentAnimatorStateInfo(0).normalizedTime <= 0.8f)
+                if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.8f)
+                {
+                    GetComponentInChildren<AttackBoss>().ResetAttack();
+                }
+            }
+
+            if (target != null)
             {
-                damageCollider.enabled = true;
-                damageCollider.isTrigger = true;
+                if (!target.GetComponent<Health>().isAlive)
+                {
+                    target = null;
+                }
+            }
+
+            if (health.health < 100)
+            {
+                target = GameObject.FindGameObjectWithTag("Player").transform;
+                AttackMode();
             }
             else
             {
-                damageCollider.enabled = false;
-                damageCollider.isTrigger = false;
+                if (canMove)
+                {
+                    if (target == null)
+                    {
+                        Patrulha();
+                        return;
+                    }
+                    else
+                    {
+                        AttackMode();
+                    }
+                }
             }
-
-            if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.8f)
-            {
-                GetComponentInChildren<AttackBoss>().ResetAttack();
-            }
-        }
-
-        if (target == null)
-        {
-            Patrulha();
-            return;
         }
         else
         {
-            distanceToTarget = Vector3.Distance(agent.transform.position, target.position);
-            agent.speed = 4.0f;
-            IsPatrolling = false;
-            targetBool = true;
+            canMove = false;
+        }
 
-            if (distanceToTarget > AttackDistance)
-            {
-                agent.isStopped = false;
-                agent.destination = target.position;
-                IsMoving = true;
-                isAttacking = false;
-            }
-            else
-            {
-                agent.isStopped = true;
-                IsMoving = false;
-                isAttacking = true;
-            }
+        if (canMove)
+        {
+            animator.applyRootMotion = false;
+            agent.isStopped = false;
+        }
+        else
+        {
+            animator.applyRootMotion = true;
+            agent.isStopped = true;
+        }
+    }
 
-            if (canMove)
-            {
-                animator.applyRootMotion = false;
-                agent.isStopped = false;
-            }
-            else
-            {
-                animator.applyRootMotion = true;
-                agent.isStopped = true;
-            }
+    public void AttackMode()
+    {
+        distanceToTarget = Vector3.Distance(agent.transform.position, target.position);
+        agent.speed = 4.0f;
+        IsPatrolling = false;
+        targetBool = true;
+
+        if (distanceToTarget > AttackDistance)
+        {
+            agent.isStopped = false;
+            agent.destination = target.position;
+            IsMoving = true;
+            isAttacking = false;
+        }
+        else
+        {
+            agent.isStopped = true;
+            IsMoving = false;
+            isAttacking = true;
         }
     }
 

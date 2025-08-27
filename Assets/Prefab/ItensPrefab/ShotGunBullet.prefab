@@ -1,5 +1,76 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5696602011201764793
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3977021000363141442}
+  - component: {fileID: 1060680186908659812}
+  - component: {fileID: 2184657724067801722}
+  m_Layer: 0
+  m_Name: Damage
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3977021000363141442
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5696602011201764793}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4025897400372169405}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!136 &1060680186908659812
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5696602011201764793}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.00090645364
+  m_Height: 0.0033339397
+  m_Direction: 2
+  m_Center: {x: 0.002602081, y: -0.000053514366, z: -0.000904369}
+--- !u!114 &2184657724067801722
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5696602011201764793}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 612ee0f7840647647a0312e6d770f496, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  knockbackForce: 90
+  damage: 70
+  hasHit: 0
 --- !u!1 &6498772255146754113
 GameObject:
   m_ObjectHideFlags: 0
@@ -14,6 +85,7 @@ GameObject:
   - component: {fileID: 7329613031406746691}
   - component: {fileID: 5560283644659259503}
   - component: {fileID: 7367850375192061131}
+  - component: {fileID: 7387156302540328112}
   m_Layer: 0
   m_Name: ShotGunBullet
   m_TagString: Untagged
@@ -33,7 +105,8 @@ Transform:
   m_LocalPosition: {x: -1.552, y: 0.824, z: 0.808}
   m_LocalScale: {x: 80, y: 79.999985, z: 79.999985}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 3977021000363141442}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &6594733336759291390
@@ -151,3 +224,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fdfeafad734bf2a49855986d4fade78d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &7387156302540328112
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6498772255146754113}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 612ee0f7840647647a0312e6d770f496, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  knockbackForce: 90
+  damage: 70
+  hasHit: 0
