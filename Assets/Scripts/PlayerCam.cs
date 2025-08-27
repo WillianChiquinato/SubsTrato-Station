@@ -8,7 +8,6 @@ public class PlayerCam : MonoBehaviour
 
     public Transform playerBody;
     public PlayerMoviment player;
-    public Transform target; // Este parece ser o alvo da câmera (cabeça)
     private float xRotation = 0f;
     private float mouseX;
     private float mouseY;

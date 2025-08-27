@@ -1,16 +1,18 @@
 using UnityEngine;
+using UnityEngine.Events;
 
 public class Chip : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    [field: SerializeField] public UnityEvent OnUse { get; private set; }
+    public ItemClass itemClass { get; private set; }
+
+    public void Use(GameObject actor)
     {
-        
+        OnUse?.Invoke();
     }
 
-    // Update is called once per frame
-    void Update()
+    public void SoundItem()
     {
-        
+        Debug.Log("Play Sound");
     }
 }

@@ -45,6 +45,8 @@ public class PlayerMoviment : MonoBehaviour
 
     [Header("Pick up Itens")]
     [SerializeField] private LayerMask pickUpLayer;
+    [SerializeField] private LayerMask interactLayer;
+
     [SerializeField]
     [Min(1)]
     private float pickUpDistance = 2f;
@@ -258,6 +260,28 @@ public class PlayerMoviment : MonoBehaviour
                         }
                     }
                 }
+                else if (Physics.Raycast(playerCameraTransform.position, playerCameraTransform.forward, out hit, pickUpDistance, interactLayer))
+                {
+                    ChipSystem chip = hit.collider.GetComponent<ChipSystem>();
+                    HightLights highlight = hit.collider.GetComponent<HightLights>();
+                    if (chip != null && highlight != null)
+                    {
+                        if (inventory.myHandItem != null && inventory.myHandItem.GetComponent<Chip>())
+                        {
+                            highlight.ToggleHighlight(true);
+                            pickUpUI.SetActive(true);
+
+                            if (Input.GetKeyDown(KeyCode.E))
+                            {
+                                chip.Interact();
+                                Destroy(inventory.myHandItem);
+                                inventory.hotbarItems[inventory.selectedSlot] = null;
+                                inventory.myHandItem = null;
+                                inventory.UpdateHotbarUI();
+                            }
+                        }
+                    }
+                }
             }
 
             // Movement and gravity
@@ -346,7 +370,7 @@ public class PlayerMoviment : MonoBehaviour
             Rigidbody rb = hit.collider.GetComponent<Rigidbody>();
             Debug.Log("Interacting with item: " + hit.collider.name);
 
-            if (hit.collider.GetComponent<Food>() || hit.collider.GetComponent<Weapon>())
+            if (hit.collider.GetComponent<Food>() || hit.collider.GetComponent<Weapon>() || hit.collider.GetComponent<Chip>())
             {
                 animator.SetTrigger("PickUp");
                 canMove = false;
@@ -522,33 +546,36 @@ public class PlayerMoviment : MonoBehaviour
                 }
                 else
                 {
-                    if (Input.GetMouseButtonDown(1))
+                    if (!inventory.myHandItem.GetComponent<Chip>())
                     {
-                        Invoke(nameof(ToggleAim), 0.5f);
-                        aimAnimActive = !aimAnimActive;
-                        if (aimAnimActive)
+                        if (Input.GetMouseButtonDown(1))
                         {
-                            inventory.myHandItem.transform.localPosition = Vector3.zero + inventory.myHandItem.GetComponent<Weapon>().AimOffset;
-                            inventory.myHandItem.transform.localRotation = inventory.myHandItem.GetComponent<Weapon>().AimOffsetRotation;
-                        }
-                        else
-                        {
-                            inventory.myHandItem.transform.localPosition = Vector3.zero + inventory.myHandItem.GetComponent<Weapon>().Offset;
-                            inventory.myHandItem.transform.localRotation = inventory.myHandItem.GetComponent<Weapon>().OffsetRotation;
-                        }
-                    }
-
-                    if (Input.GetMouseButtonDown(0) && aimActive)
-                    {
-                        if (isStealth && isMoving)
-                        {
-                            return;
+                            Invoke(nameof(ToggleAim), 0.5f);
+                            aimAnimActive = !aimAnimActive;
+                            if (aimAnimActive)
+                            {
+                                inventory.myHandItem.transform.localPosition = Vector3.zero + inventory.myHandItem.GetComponent<Weapon>().AimOffset;
+                                inventory.myHandItem.transform.localRotation = inventory.myHandItem.GetComponent<Weapon>().AimOffsetRotation;
+                            }
+                            else
+                            {
+                                inventory.myHandItem.transform.localPosition = Vector3.zero + inventory.myHandItem.GetComponent<Weapon>().Offset;
+                                inventory.myHandItem.transform.localRotation = inventory.myHandItem.GetComponent<Weapon>().OffsetRotation;
+                            }
                         }
 
-                        IUsable usable = inventory.myHandItem.GetComponent<IUsable>();
-                        if (usable != null)
+                        if (Input.GetMouseButtonDown(0) && aimActive)
                         {
-                            usable.Use(this.gameObject);
+                            if (isStealth && isMoving)
+                            {
+                                return;
+                            }
+
+                            IUsable usable = inventory.myHandItem.GetComponent<IUsable>();
+                            if (usable != null)
+                            {
+                                usable.Use(this.gameObject);
+                            }
                         }
                     }
                 }

@@ -34,7 +34,7 @@ MonoBehaviour:
     CurrentAmmo: 2
     MaxAmmo: 2
   - itemSO: {fileID: 11400000, guid: 443c6591c11dc4c4c90dc752fd74b651, type: 2}
-    prefab: {fileID: 308566995987504825, guid: 43accc3f06e905e4dbb2f205788feb58, type: 3}
+    prefab: {fileID: 1205828325972953908, guid: 43671217b259b1e4594f39c19881015f, type: 3}
     type: 3
     CurrentAmmo: 1
     MaxAmmo: 1
