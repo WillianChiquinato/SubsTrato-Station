@@ -8,6 +8,7 @@ TagManager:
   - Cadeira
   - Quest
   - Target
+  - Enemy
   layers:
   - Default
   - TransparentFX

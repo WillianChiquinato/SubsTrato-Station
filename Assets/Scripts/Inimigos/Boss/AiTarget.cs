@@ -44,7 +44,7 @@ public class AiTarget : MonoBehaviour
         health = GetComponent<Health>();
 
         //Debug por enquanto.
-        // target = GameObject.FindGameObjectWithTag("Player").transform;
+        //target = GameObject.FindGameObjectWithTag("Player").transform;
     }
 
     void Update()
