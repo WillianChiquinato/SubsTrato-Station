@@ -27,7 +27,8 @@ public class CharacterMultiplayer : NetworkBehaviour
 
     [Header("Attack")]
     public KeyCode attackKey = KeyCode.Mouse0;
-    public CharacterMultiplayerAttack attackCollider;
+    public CharacterMultiplayerAttack attackCollider1;
+    public CharacterMultiplayerAttack attackCollider2;
 
 
     [Header("GroundCheck")]
@@ -56,11 +57,13 @@ public class CharacterMultiplayer : NetworkBehaviour
     {
         character = GetComponent<CharacterController>();
         capsuleColliderCharacter = GetComponent<CapsuleCollider>();
-        // attackCollider.GetComponentInChildren<CharacterMultiplayerAttack>();
-
         animator = GetComponent<Animator>();
         health = GetComponent<Health>();
-        attackCollider.GetComponent<SphereCollider>().enabled = false;
+
+        attackCollider1 = transform.Find("mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/mixamorig:LeftShoulder/mixamorig:LeftArm/mixamorig:LeftForeArm/mixamorig:LeftHand/ColisorEsquerda").GetComponent<CharacterMultiplayerAttack>();
+        attackCollider2 = transform.Find("mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/mixamorig:RightShoulder/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand/ColisorDireita").GetComponent<CharacterMultiplayerAttack>();
+        attackCollider1.GetComponent<SphereCollider>().enabled = false;
+        attackCollider2.GetComponent<SphereCollider>().enabled = false;
     }
 
     public override void FixedUpdateNetwork()
@@ -90,13 +93,37 @@ public class CharacterMultiplayer : NetworkBehaviour
                 RotatePlayer();
             }
 
-            if (animator.GetCurrentAnimatorStateInfo(0).IsName("Attack") && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.4f)
+            if (animator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
             {
-                attackCollider.GetComponent<SphereCollider>().enabled = true;
-                if (animator.GetCurrentAnimatorStateInfo(0).IsName("Attack") && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.9f)
+                animator.applyRootMotion = true;
+                if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.15f)
                 {
-                    attackCollider.GetComponent<SphereCollider>().enabled = false;
-                    attackCollider.ResetAttack();
+                    attackCollider1.GetComponent<SphereCollider>().enabled = true;
+
+                    if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.3f)
+                    {
+                        attackCollider1.GetComponent<SphereCollider>().enabled = false;
+
+                        if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.4f)
+                        {
+                            attackCollider2.GetComponent<SphereCollider>().enabled = true;
+
+                            if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.7f)
+                            {
+                                attackCollider2.GetComponent<SphereCollider>().enabled = false;
+                            }
+                        }
+                    }
+                }
+
+                if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.9f)
+                {
+                    attackCollider1.GetComponent<SphereCollider>().enabled = false;
+                    attackCollider2.GetComponent<SphereCollider>().enabled = false;
+
+                    attackCollider1.ResetAttack();
+                    attackCollider2.ResetAttack();
+                    animator.applyRootMotion = false;
                 }
             }
 

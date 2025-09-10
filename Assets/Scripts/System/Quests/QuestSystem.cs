@@ -10,6 +10,7 @@ public class QuestSystem : MonoBehaviour
     public static QuestSystem instance;
 
     public QuestTrigger currentQuestTrigger;
+    public TextMeshProUGUI tituloQuest;
     public TextMeshProUGUI questTextArea;
     public QuestTextos linhaAtual;
     public Queue<QuestTextos> linhas;
@@ -47,6 +48,7 @@ public class QuestSystem : MonoBehaviour
         {
             linhas.Enqueue(questTextos);
         }
+        tituloQuest.text = quest.dialogoTextos[0].tituloQuest;
 
         currentQuestTrigger = trigger;
         DisplayNextLinha();

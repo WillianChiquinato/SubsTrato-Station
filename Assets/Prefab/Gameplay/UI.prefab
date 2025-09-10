@@ -2257,18 +2257,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc521ff14a1c7ba44b8e483b709e4f95, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  activeQuests: []
+  currentQuestTrigger: {fileID: 0}
+  tituloQuest: {fileID: 8145667633550183960}
   questTextArea: {fileID: 3707001606598584821}
   linhaAtual:
     tituloQuest: 
     linhaTexto: 
     respostaQuest: 
+    Similar: 
   inputField: {fileID: 7071681656853376918}
   btnSubmit: {fileID: 1930518872502647575}
-  speedTexto: 0.05
+  speedTexto: 0.07
   isTextComplete: 0
   questArea: 0
   isQuestAtivo: 0
+  questEnding: 0
 --- !u!95 &5203641376297323823
 Animator:
   serializedVersion: 7

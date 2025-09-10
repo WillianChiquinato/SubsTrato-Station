@@ -129,22 +129,25 @@ public class PlayerMoviment : MonoBehaviour
                 }
             }
 
-            if (QuestSystem.instance != null && QuestSystem.instance.questArea)
+            if (QuestSystem.instance.questArea)
             {
                 if (QuestSystem.instance.isQuestAtivo)
                 {
                     canMove = false;
-                    //Liberar movimento do mouse.
-                    Cursor.lockState = CursorLockMode.None;
+
+                    // Liberar movimento do mouse
+                    Cursor.lockState = CursorLockMode.Confined;
                     Cursor.visible = true;
                 }
                 else
                 {
                     canMove = true;
+
                     Cursor.lockState = CursorLockMode.Locked;
                     Cursor.visible = false;
                 }
             }
+
 
             if (isMoving)
             {
@@ -285,14 +288,13 @@ public class PlayerMoviment : MonoBehaviour
             }
             else
             {
-                Cursor.lockState = CursorLockMode.Locked;
                 isMoving = false;
                 horizontalInput = 0;
                 verticalInput = 0;
             }
 
             // Movement and gravity
-                movePlayer();
+            movePlayer();
 
             if (isGrounded && velocity.y < 0)
             {

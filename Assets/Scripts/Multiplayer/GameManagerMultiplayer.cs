@@ -168,12 +168,13 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
             roomCountPlayers = GameObject.Find("TextoConnect")?.GetComponent<TextMeshProUGUI>();
             readyButton = GameObject.Find("readyButton")?.GetComponent<Button>();
             levelLoader = FindFirstObjectByType<LevelLoaderGame>();
+
+            if (Runner.IsSceneAuthority)
+            {
+                roomCountPlayers.text = $"{Runner.ActivePlayers.Count()} / 4";
+            }
         }
 
-        if (Runner.IsSceneAuthority)
-        {
-            roomCountPlayers.text = $"{Runner.ActivePlayers.Count()} / 4";
-        }
     }
 
     public void IsplayerReadying()
