@@ -381,7 +381,7 @@ public class PlayerMoviment : MonoBehaviour
             Rigidbody rb = hit.collider.GetComponent<Rigidbody>();
             Debug.Log("Interacting with item: " + hit.collider.name);
 
-            if (hit.collider.GetComponent<Food>() || hit.collider.GetComponent<Weapon>() || hit.collider.GetComponent<Chip>())
+            if (hit.collider.GetComponent<Food>() || hit.collider.GetComponent<Weapon>())
             {
                 animator.SetTrigger("PickUp");
                 canMove = false;
@@ -402,7 +402,7 @@ public class PlayerMoviment : MonoBehaviour
 
                 pickUpUI.SetActive(false);
             }
-            else if (hit.collider.GetComponent<Item>())
+            else if (hit.collider.GetComponent<Chip>())
             {
                 Debug.Log("É um item do cenário");
                 ItemFlutuante = hit.collider.gameObject;

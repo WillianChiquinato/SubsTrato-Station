@@ -2619,7 +2619,7 @@ CharacterController:
   m_StepOffset: 0.3
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
-  m_Center: {x: -0.03369069, y: 0.67, z: 0.001532364}
+  m_Center: {x: -0.03369069, y: 0.61, z: 0.001532364}
 --- !u!136 &4474957578932035043
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -2640,9 +2640,9 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.21590924
-  m_Height: 1.0154908
+  m_Height: 1.0811262
   m_Direction: 1
-  m_Center: {x: -0.031420615, y: 0.6677174, z: -0.0056793215}
+  m_Center: {x: -0.031420615, y: 0.6348996, z: -0.0056793215}
 --- !u!195 &987227162519258484
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -2880,7 +2880,7 @@ Transform:
   m_GameObject: {fileID: 8100057488766812781}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.467, z: 0}
+  m_LocalPosition: {x: 0, y: 0.539, z: 0.42}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2896,9 +2896,9 @@ Light:
   m_Enabled: 1
   serializedVersion: 11
   m_Type: 2
-  m_Color: {r: 0.4871943, g: 1, b: 0.3160377, a: 1}
-  m_Intensity: 30
-  m_Range: 20
+  m_Color: {r: 0.3161363, g: 0.6377357, b: 0.21057305, a: 1}
+  m_Intensity: 40
+  m_Range: 40
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10

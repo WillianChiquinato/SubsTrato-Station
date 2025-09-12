@@ -18,6 +18,16 @@ MonoBehaviour:
     type: 0
     CurrentAmmo: 12
     MaxAmmo: 12
+  - itemSO: {fileID: 11400000, guid: ae762b322429898479721c22d502783a, type: 2}
+    prefab: {fileID: 3296738652517252863, guid: 5962b2729770bf44a922556894d65a56, type: 3}
+    type: 0
+    CurrentAmmo: 12
+    MaxAmmo: 12
+  - itemSO: {fileID: 11400000, guid: 466bbbeeff8af9c4fa51f7bc371e50a8, type: 2}
+    prefab: {fileID: 3296738652517252863, guid: 5962b2729770bf44a922556894d65a56, type: 3}
+    type: 0
+    CurrentAmmo: 12
+    MaxAmmo: 12
   - itemSO: {fileID: 11400000, guid: 801883f4970d84b4aaafd23d6a35ad6f, type: 2}
     prefab: {fileID: 851828906443010971, guid: 6d549cb7bbe577a4f93f846824f359c1, type: 3}
     type: 3
@@ -29,6 +39,11 @@ MonoBehaviour:
     CurrentAmmo: 1
     MaxAmmo: 1
   - itemSO: {fileID: 11400000, guid: 43f289efff8d2c34196c725c9e372997, type: 2}
+    prefab: {fileID: 7663748750715224235, guid: b7247ae4cbe0a9e4e8ff9f01ed037510, type: 3}
+    type: 1
+    CurrentAmmo: 2
+    MaxAmmo: 2
+  - itemSO: {fileID: 11400000, guid: abed7039a2fcebd4db0f602bcf6274e7, type: 2}
     prefab: {fileID: 7663748750715224235, guid: b7247ae4cbe0a9e4e8ff9f01ed037510, type: 3}
     type: 1
     CurrentAmmo: 2
