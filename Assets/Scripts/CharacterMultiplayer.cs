@@ -1,16 +1,18 @@
-using UnityEngine;
 using Fusion;
+using UnityEngine;
 
 public class CharacterMultiplayer : NetworkBehaviour
 {
+    [Header("Sounds")]
+    public AudioSource PassosSound;
+    public AudioSource AttackSound;
 
     [Header("Movement")]
     public float moveSpeed;
+    private Vector3 moveDirection;
+    private float horizontalInput;
+    private float verticalInput;
 
-    float horizontalInput;
-    float verticalInput;
-
-    Vector3 moveDirection;
     public CharacterController character;
     public CapsuleCollider capsuleColliderCharacter;
     public Animator animator;
@@ -21,19 +23,12 @@ public class CharacterMultiplayer : NetworkBehaviour
     public float jumpHeight = 1.5f;
     public float gravity = -9.81f;
 
-    [Header("JumpKey")]
-    public KeyCode jumpKey = KeyCode.Space;
-    public float airControlMultiplier;
-
     [Header("Attack")]
-    public KeyCode attackKey = KeyCode.Mouse0;
     public CharacterMultiplayerAttack attackCollider1;
     public CharacterMultiplayerAttack attackCollider2;
 
-
     [Header("GroundCheck")]
     public bool isGrounded;
-
 
     [Header("Knockback")]
     public float knockbackDuration = 0.3f;
@@ -43,14 +38,8 @@ public class CharacterMultiplayer : NetworkBehaviour
 
     public bool canMove
     {
-        get
-        {
-            return animator.GetBool("canMove");
-        }
-        set
-        {
-            animator.SetBool("canMove", value);
-        }
+        get { return animator.GetBool("canMove"); }
+        set { animator.SetBool("canMove", value); }
     }
 
     void Start()
@@ -62,16 +51,14 @@ public class CharacterMultiplayer : NetworkBehaviour
 
         attackCollider1 = transform.Find("mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/mixamorig:LeftShoulder/mixamorig:LeftArm/mixamorig:LeftForeArm/mixamorig:LeftHand/ColisorEsquerda").GetComponent<CharacterMultiplayerAttack>();
         attackCollider2 = transform.Find("mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/mixamorig:RightShoulder/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand/ColisorDireita").GetComponent<CharacterMultiplayerAttack>();
+
         attackCollider1.GetComponent<SphereCollider>().enabled = false;
         attackCollider2.GetComponent<SphereCollider>().enabled = false;
     }
 
     public override void FixedUpdateNetwork()
     {
-        if (!Object.HasInputAuthority)
-        {
-            return;
-        }
+        if (!GetInput(out NetworkInputData inputData)) return;
 
         isGrounded = character.isGrounded;
         animator.SetBool("IsGround", isGrounded);
@@ -79,107 +66,77 @@ public class CharacterMultiplayer : NetworkBehaviour
         animator.SetFloat("yVelocity", velocity.y);
         animator.SetBool("IsAlive", health.isAlive);
 
-        if (health.isAlive)
-        {
-            if (knockbackTimer > 0)
-            {
-                character.Move(knockbackVelocity * Runner.DeltaTime);
-                knockbackTimer -= Runner.DeltaTime;
-            }
-
-            if (canMove)
-            {
-                MyInput();
-                RotatePlayer();
-            }
-
-            if (animator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
-            {
-                animator.applyRootMotion = true;
-                if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.15f)
-                {
-                    attackCollider1.GetComponent<SphereCollider>().enabled = true;
-
-                    if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.3f)
-                    {
-                        attackCollider1.GetComponent<SphereCollider>().enabled = false;
-
-                        if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.4f)
-                        {
-                            attackCollider2.GetComponent<SphereCollider>().enabled = true;
-
-                            if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.7f)
-                            {
-                                attackCollider2.GetComponent<SphereCollider>().enabled = false;
-                            }
-                        }
-                    }
-                }
-
-                if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.9f)
-                {
-                    attackCollider1.GetComponent<SphereCollider>().enabled = false;
-                    attackCollider2.GetComponent<SphereCollider>().enabled = false;
-
-                    attackCollider1.ResetAttack();
-                    attackCollider2.ResetAttack();
-                    animator.applyRootMotion = false;
-                }
-            }
-
-            movePlayer();
-
-            if (isGrounded && velocity.y < 0)
-            {
-                velocity.y = -2f;
-            }
-
-            if (Input.GetKey(jumpKey) && isGrounded)
-            {
-                Jump();
-            }
-
-            if (Input.GetKey(attackKey) && canMove && isGrounded)
-            {
-                Attack();
-            }
-
-            velocity.y += gravity * Runner.DeltaTime;
-
-            Vector3 finalMove = moveDirection * moveSpeed;
-
-            if (!isGrounded)
-            {
-                finalMove *= airControlMultiplier;
-            }
-
-            finalMove.y = velocity.y;
-            character.Move(finalMove * Runner.DeltaTime);
-        }
-        else
+        if (!health.isAlive)
         {
             canMove = false;
             animator.SetTrigger("Death");
             character.Move(Vector3.zero);
             velocity = Vector3.zero;
+            return;
+        }
+
+        if (!isGrounded)
+        {
+            animator.applyRootMotion = false;
+        }
+
+        // Knockback
+        if (knockbackTimer > 0)
+        {
+            character.Move(knockbackVelocity * Runner.DeltaTime);
+            knockbackTimer -= Runner.DeltaTime;
+        }
+
+        if (canMove)
+        {
+            HandleMovement(inputData);
+            HandleRotation(inputData);
+        }
+
+        HandleAnimations(inputData);
+        HandleAttack(inputData);
+
+        // Jump
+        if (isGrounded && inputData.jumpPressed)
+        {
+            Jump();
+        }
+
+        // Gravidade
+        if (isGrounded && velocity.y < 0)
+            velocity.y = -2f;
+
+        velocity.y += gravity * Runner.DeltaTime;
+    }
+
+    void OnAnimatorMove()
+    {
+        if (animator.applyRootMotion)
+        {
+            // pega o deslocamento da animação
+            Vector3 rootMotion = animator.deltaPosition;
+
+            // mantém o controle da gravidade
+            rootMotion.y = velocity.y * Runner.DeltaTime;
+
+            character.Move(rootMotion);
         }
     }
 
-    private void MyInput()
+    private void HandleMovement(NetworkInputData inputData)
     {
-        horizontalInput = Input.GetAxis("Horizontal");
-        verticalInput = Input.GetAxis("Vertical");
+        Vector3 direction = new Vector3(inputData.moveInput.x, 0f, inputData.moveInput.y);
+        moveDirection = direction.normalized;
 
-        isMoving = horizontalInput != 0 || verticalInput != 0;
-        animator.SetBool("Run", isMoving);
+        Vector3 move = moveDirection * moveSpeed;
+        move.y = velocity.y;
 
-        animator.SetFloat("horizontal", horizontalInput);
-        animator.SetFloat("vertical", verticalInput);
+        character.Move(move * Runner.DeltaTime);
     }
 
-    private void RotatePlayer()
+    private void HandleRotation(NetworkInputData inputData)
     {
-        Vector3 direction = new Vector3(horizontalInput, 0f, verticalInput);
+        Vector3 direction = new Vector3(inputData.moveInput.x, 0f, inputData.moveInput.y);
 
         if (direction.magnitude > 0.1f)
         {
@@ -188,20 +145,76 @@ public class CharacterMultiplayer : NetworkBehaviour
         }
     }
 
-    private void movePlayer()
+    private void HandleAnimations(NetworkInputData inputData)
     {
-        if (!canMove)
+        if (!Object.HasInputAuthority) return;
+
+        isMoving = inputData.moveInput.magnitude > 0.1f;
+        animator.SetBool("Run", isMoving);
+
+        if (isMoving && isGrounded && !animator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
         {
-            moveDirection = Vector3.zero;
-            return;
+            if (!PassosSound.isPlaying) PassosSound.Play();
+        }
+        else if (PassosSound.isPlaying)
+        {
+            PassosSound.Stop();
         }
 
-        Vector3 inputDirection = new Vector3(horizontalInput, velocity.y, verticalInput).normalized;
+        animator.SetFloat("horizontal", inputData.moveInput.x);
+        animator.SetFloat("vertical", inputData.moveInput.y);
+    }
 
-        moveDirection = inputDirection * moveSpeed;
 
-        // Aplica movimento com o CharacterController
-        character.Move(moveDirection * Runner.DeltaTime);
+    private void HandleAttack(NetworkInputData inputData)
+    {
+        if (animator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
+        {
+            if (!AttackSound.isPlaying)
+            {
+                AttackSound.Play();
+            }
+            animator.applyRootMotion = true;
+
+            if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.15f)
+            {
+                attackCollider1.GetComponent<SphereCollider>().enabled = true;
+
+                if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.3f)
+                {
+                    attackCollider1.GetComponent<SphereCollider>().enabled = false;
+
+                    if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.4f)
+                    {
+                        attackCollider2.GetComponent<SphereCollider>().enabled = true;
+
+                        if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.7f)
+                        {
+                            attackCollider2.GetComponent<SphereCollider>().enabled = false;
+                            if (AttackSound.isPlaying)
+                            {
+                                AttackSound.Stop();
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.9f)
+            {
+                attackCollider1.GetComponent<SphereCollider>().enabled = false;
+                attackCollider2.GetComponent<SphereCollider>().enabled = false;
+
+                attackCollider1.ResetAttack();
+                attackCollider2.ResetAttack();
+                ResetAttack();
+            }
+        }
+
+        if (inputData.attackPressed && canMove && isGrounded)
+        {
+            Attack();
+        }
     }
 
     public void Jump()
@@ -209,24 +222,11 @@ public class CharacterMultiplayer : NetworkBehaviour
         velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
     }
 
-    public void ApplyKnockback(Vector3 direction, float force)
-    {
-        direction.y = 0.2f;
-        knockbackVelocity = direction.normalized * force;
-        knockbackTimer = knockbackDuration;
-    }
-
-    public bool IsBeingKnockedBack()
-    {
-        return knockbackTimer > 0;
-    }
-
     public void Attack()
     {
         animator.SetTrigger("Attack");
         canMove = false;
         moveDirection = Vector3.zero;
-        animator.applyRootMotion = true;
         Invoke("ResetAttack", 1.5f);
     }
 
@@ -236,3 +236,4 @@ public class CharacterMultiplayer : NetworkBehaviour
         canMove = true;
     }
 }
+

@@ -4,6 +4,13 @@ using UnityEngine;
 
 public class Boss : MonoBehaviour
 {
+    [Header("Sounds")]
+    public AudioSource ContagemRegressiva;
+    public AudioSource BossDeathSound;
+    private bool hasPlayedDeathSound = false;
+
+
+    [Header("Revive Settings")]
     public ItemMove ContagemBoss;
     public bool timingReady = false;
     private int startTime = 7;
@@ -17,6 +24,19 @@ public class Boss : MonoBehaviour
     public Health health;
     public Animator animator;
 
+
+    public bool canMove
+    {
+        get
+        {
+            return animator.GetBool("canMove");
+        }
+        set
+        {
+            animator.SetBool("canMove", value);
+        }
+    }
+
     void Start()
     {
         health = GetComponent<Health>();
@@ -28,10 +48,28 @@ public class Boss : MonoBehaviour
 
     void Update()
     {
-        if (!health.isAlive)
+        if (!health.isAlive && !hasPlayedDeathSound)
         {
+            hasPlayedDeathSound = true; // garante que só toque uma vez
             health.isDead = true;
+
+            if (BossDeathSound != null)
+            {
+                AudioSource.PlayClipAtPoint(BossDeathSound.clip, transform.position);
+            }
+
             StartCoroutine(TimingToRevive());
+        }
+        else
+        {
+            StopAllCoroutines();
+            animator.SetBool("Stunned", false);
+            timingReady = false;
+            ContagemBoss.gameObject.SetActive(false);
+            if (ContagemRegressiva.isPlaying)
+            {
+                ContagemRegressiva.Stop();
+            }
         }
 
         if (timingReady)
@@ -49,8 +87,7 @@ public class Boss : MonoBehaviour
                 health.isAlive = true;
                 health.health = 100;
                 health.isDead = false;
-                animator.SetBool("Stunned", false);
-                
+
                 ContagemBoss.gameObject.SetActive(false);
                 currentTime = startTime;
                 timingReady = false;
@@ -76,5 +113,9 @@ public class Boss : MonoBehaviour
         yield return new WaitForSeconds(2f);
 
         timingReady = true;
+        if (!ContagemRegressiva.isPlaying)
+        {
+            ContagemRegressiva.Play();
+        }
     }
 }

@@ -5,6 +5,10 @@ using UnityEngine.Events;
 
 public class Weapon : MonoBehaviour, IUsable
 {
+    [Header("Sounds")]
+    public AudioSource shootSound;
+    
+    [Header("Shooting Settings")]
     private float lastShootTime = -999f;
     [SerializeField] private float shootCooldown = 0.7f;
     [field: SerializeField] public UnityEvent OnUse { get; private set; }
@@ -21,6 +25,8 @@ public class Weapon : MonoBehaviour, IUsable
     public Quaternion OffsetRotation;
     public Vector3 AimOffset;
     public Quaternion AimOffsetRotation;
+
+
 
     void Start()
     {
@@ -123,13 +129,13 @@ public class Weapon : MonoBehaviour, IUsable
         Debug.Log($"{Type} fired!");
     }
 
-    // public void PlayShootSound()
-    // {
-    //     if (itemClass.shootSound != null)
-    //     {
-    //         AudioSource.PlayClipAtPoint(itemClass.shootSound, transform.position);
-    //     }
-    // }
+    public void PlayShootSound()
+    {
+        if (shootSound != null)
+        {
+            AudioSource.PlayClipAtPoint(shootSound.clip, transform.position);
+        }
+    }
 
     public void PlayShootAnimation()
     {

@@ -4,7 +4,11 @@ using UnityEngine;
 
 public class ConeVision : MonoBehaviour
 {
-    public PlayerMoviment player;
+    [Header("Sounds")]
+    public AudioSource BossHurtSound;
+    private bool hasPlayedSound = false;
+
+    [Header("Vision Settings")]
     public Material visionMaterial;
     public float visionAngle = 45f;
     public float visionDistance = 10f;
@@ -26,7 +30,6 @@ public class ConeVision : MonoBehaviour
 
     void Awake()
     {
-        player = FindFirstObjectByType<PlayerMoviment>();
         combinedMask = visionObjectsLayer | playerLayer;
         aiTarget = GetComponentInParent<AiTarget>();
     }
@@ -71,6 +74,11 @@ public class ConeVision : MonoBehaviour
                     Debug.Log("Player detectado!");
                     aiTarget.target = hit.collider.transform;
                     detectouPlayerNaVisao = true;
+                    if (BossHurtSound != null && !BossHurtSound.isPlaying && !hasPlayedSound)
+                    {
+                        AudioSource.PlayClipAtPoint(BossHurtSound.clip, transform.position);
+                        hasPlayedSound = true;
+                    }
                 }
                 else
                 {

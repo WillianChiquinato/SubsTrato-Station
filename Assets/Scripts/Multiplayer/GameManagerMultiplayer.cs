@@ -254,7 +254,17 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
     }
 
 
-    public void OnInput(NetworkRunner runner, NetworkInput input) { }
+    public void OnInput(NetworkRunner runner, NetworkInput input)
+    {
+        var data = new NetworkInputData();
+
+        data.moveInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        data.jumpPressed = Input.GetKey(KeyCode.Space);
+        data.attackPressed = Input.GetMouseButton(0);
+
+        input.Set(data);
+    }
+    
     public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) { }
     public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) { Debug.Log($"Runner Shutdown: {shutdownReason}"); }
     public void OnConnectedToServer(NetworkRunner runner) { Debug.Log("Connected to server."); }
@@ -270,4 +280,11 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
     public void OnSceneLoadStart(NetworkRunner runner) { Debug.Log($"OnSceneLoadStart: Carregando cena {GetSceneInfo()}..."); }
     public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }
     public void OnObjectEnterAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }
+}
+
+public struct NetworkInputData : INetworkInput
+{
+    public Vector2 moveInput;
+    public bool jumpPressed;
+    public bool attackPressed;
 }

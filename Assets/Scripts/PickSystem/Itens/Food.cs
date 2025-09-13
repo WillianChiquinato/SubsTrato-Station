@@ -8,10 +8,11 @@ public class Food : MonoBehaviour, IUsable
     public int _healthBoost;
     public int _staminaBoost;
     public float _boostingTiming;
+    public AudioSource foodSound;
 
     void Start()
     {
-       itemClass = GetComponent<ItemClass>();
+        itemClass = GetComponent<ItemClass>();
     }
 
     public void Use(GameObject actor)
@@ -25,14 +26,10 @@ public class Food : MonoBehaviour, IUsable
 
     public void DestroyItem()
     {
-        Destroy(gameObject);
+        if (foodSound != null)
+        {
+            AudioSource.PlayClipAtPoint(foodSound.clip, transform.position);
+        }
+        Destroy(gameObject, foodSound.clip.length);
     }
-
-    // public void PlayFoodSound()
-    // {
-    //     if (itemClass.shootSound != null)
-    //     {
-    //         AudioSource.PlayClipAtPoint(itemClass.shootSound, transform.position);
-    //     }
-    // }
 }

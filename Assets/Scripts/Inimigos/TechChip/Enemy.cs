@@ -4,6 +4,12 @@ using UnityEngine.AI;
 
 public class Enemy : MonoBehaviour
 {
+    [Header("Sounds")]
+    public AudioSource EnemyDeathSound;
+    public AudioSource EnemyIdleSound;
+    private bool hasPlayedDeathSound = false;
+
+
     [Header("Knockback")]
     public float knockbackDuration = 0.3f;
     private float knockbackTimer;
@@ -61,6 +67,11 @@ public class Enemy : MonoBehaviour
 
         if (!health.isAlive)
         {
+            if (EnemyDeathSound != null && !hasPlayedDeathSound)
+            {
+                AudioSource.PlayClipAtPoint(EnemyDeathSound.clip, transform.position);
+            }
+            hasPlayedDeathSound = true;
             Agent.isStopped = true;
             canMove = false;
 
@@ -72,6 +83,11 @@ public class Enemy : MonoBehaviour
 
             GetComponent<CharacterController>().enabled = false;
             GetComponent<CapsuleCollider>().enabled = false;
+
+            if (EnemyIdleSound != null && EnemyIdleSound.isPlaying)
+            {
+                EnemyIdleSound.Stop();
+            }
             return;
         }
 
