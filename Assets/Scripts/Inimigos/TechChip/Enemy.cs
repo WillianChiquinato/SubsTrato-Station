@@ -91,6 +91,29 @@ public class Enemy : MonoBehaviour
             return;
         }
 
+        if (animator.GetCurrentAnimatorStateInfo(0).IsName("HitBlock"))
+        {
+            Vector3 hitDirection = (playerDetect.transform.position - transform.position).normalized;
+            hitDirection.y = 0;
+            if (hitDirection != Vector3.zero)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(hitDirection);
+                transform.rotation = targetRotation;
+            }
+            
+            if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.9f)
+            {
+                Agent.isStopped = false;
+                canMove = true;
+            }
+            else
+            {
+                Agent.isStopped = true;
+                canMove = false;
+            }
+            return;
+        }
+
         if (playerDetect == null) return;
 
         distanceToPlayer = Vector3.Distance(transform.position, playerDetect.transform.position);
@@ -101,7 +124,6 @@ public class Enemy : MonoBehaviour
             {
                 isFleeing = true;
                 FleeFromPlayer();
-                // StartCoroutine(DelayIdleState());
             }
 
             if (isFleeing && !Agent.pathPending && Agent.remainingDistance <= Agent.stoppingDistance)
@@ -115,11 +137,10 @@ public class Enemy : MonoBehaviour
             {
                 Agent.isStopped = true;
                 Agent.ResetPath();
-                canMove = false;
                 IsEscape = false;
                 IsFear = true;
 
-                escapeTrueDistance = 25f;
+                escapeTrueDistance = 30f;
                 isFleeing = false;
             }
         }
@@ -128,7 +149,7 @@ public class Enemy : MonoBehaviour
 
     void FleeFromPlayer()
     {
-        escapeTrueDistance += 15f;
+        escapeTrueDistance += 20f;
         Vector3 fleeDirection = (transform.position - playerDetect.transform.position).normalized;
 
         // Desvio para evitar travar sempre em linha reta.
@@ -155,13 +176,6 @@ public class Enemy : MonoBehaviour
         }
     }
 
-    IEnumerator DelayIdleState()
-    {
-        yield return new WaitForSeconds(20f);
-        isFleeing = false;
-        escapeTrueDistance = 20f;
-    }
-
     public void ApplyKnockback(Vector3 direction, float force)
     {
         direction.y = 0.2f;
@@ -175,5 +189,13 @@ public class Enemy : MonoBehaviour
     public bool IsBeingKnockedBack()
     {
         return knockbackTimer > 0;
+    }
+
+    void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Bullet"))
+        {
+            animator.SetTrigger("BulletBlock");
+        }
     }
 }

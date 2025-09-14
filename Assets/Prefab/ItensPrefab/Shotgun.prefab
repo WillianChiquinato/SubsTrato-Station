@@ -511,6 +511,7 @@ Transform:
   - {fileID: 7573880450059468020}
   - {fileID: 4641849435110316576}
   - {fileID: 3961738304487328584}
+  - {fileID: 5526940514353673728}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &73654061896519593
@@ -626,11 +627,11 @@ MonoBehaviour:
   inventory: {fileID: 0}
   CurrentAmmo: 0
   MaxAmmo: 0
-  pointBullet: {fileID: 2424531792550554847}
-  Offset: {x: -0.2, y: 0.11, z: 0}
+  pointBullet: {fileID: 5526940514353673728}
+  Offset: {x: -0.61, y: 0.11, z: 0}
   OffsetRotation: {x: 0, y: 0, z: 0, w: 0}
-  AimOffset: {x: 0.05, y: 0.1, z: 0.003}
-  AimOffsetRotation: {x: 0.6666365, y: 0.3305288, z: 0.2192751, w: 0.6310823}
+  AimOffset: {x: -0.112, y: -0.213, z: 0.112}
+  AimOffsetRotation: {x: 0.6330322, y: 0.40497142, z: 0.30034143, w: 0.587421}
 --- !u!114 &3577377932813744242
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -776,3 +777,34 @@ SkinnedMeshRenderer:
     m_Center: {x: -0.3433615, y: 0.0018663406, z: 0}
     m_Extent: {x: 0.42776543, y: 0.08045663, z: 0.027942108}
   m_DirtyAABB: 0
+--- !u!1 &8109910315215809973
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5526940514353673728}
+  m_Layer: 6
+  m_Name: BulletEnd
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5526940514353673728
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8109910315215809973}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.428, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6217270714391276389}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

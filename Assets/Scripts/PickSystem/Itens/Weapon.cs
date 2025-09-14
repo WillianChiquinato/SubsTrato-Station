@@ -26,8 +26,6 @@ public class Weapon : MonoBehaviour, IUsable
     public Vector3 AimOffset;
     public Quaternion AimOffsetRotation;
 
-
-
     void Start()
     {
         itemClass = GetComponent<ItemClass>();
@@ -39,7 +37,7 @@ public class Weapon : MonoBehaviour, IUsable
     {
         if (WeaponType.Target != Type)
         {
-            if (CurrentAmmo < 1)
+            if (CurrentAmmo <= 0)
             {
                 anim.SetBool("Ammo", false);
                 anim.SetTrigger("NoAmmo");
@@ -101,7 +99,7 @@ public class Weapon : MonoBehaviour, IUsable
 
     public void ShootProjectile()
     {
-        if (CurrentAmmo <= 0) return;
+        if (CurrentAmmo < 0) return;
 
         // Exemplo simples: instanciar projétil
         if (itemClass.projectilePrefab != null)
@@ -131,6 +129,8 @@ public class Weapon : MonoBehaviour, IUsable
 
     public void PlayShootSound()
     {
+        if (CurrentAmmo < 0) return;
+
         if (shootSound != null)
         {
             AudioSource.PlayClipAtPoint(shootSound.clip, transform.position);
@@ -139,6 +139,8 @@ public class Weapon : MonoBehaviour, IUsable
 
     public void PlayShootAnimation()
     {
+        if (CurrentAmmo < 0) return;
+        
         if (anim != null)
         {
             if (CurrentAmmo < 1)

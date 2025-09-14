@@ -43,6 +43,11 @@ public class DamageWeapons : MonoBehaviour
         }
         else if (ObjectCollider.CompareTag("Enemy"))
         {
+            if (this.gameObject.CompareTag("Bullet"))
+            {
+                return;
+            }
+
             hasHit = true;
 
             // Verificando se o jogador usa o CharacterController
