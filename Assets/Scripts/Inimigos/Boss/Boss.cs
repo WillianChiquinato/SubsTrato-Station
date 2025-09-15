@@ -24,7 +24,6 @@ public class Boss : MonoBehaviour
     public Health health;
     public Animator animator;
 
-
     public bool canMove
     {
         get
@@ -48,28 +47,26 @@ public class Boss : MonoBehaviour
 
     void Update()
     {
-        if (!health.isAlive && !hasPlayedDeathSound)
+        animator.SetBool("IsAlive", health.isAlive);
+        if (!health.isAlive)
         {
-            hasPlayedDeathSound = true; // garante que só toque uma vez
             health.isDead = true;
 
-            if (BossDeathSound != null)
+            if (BossDeathSound != null && !hasPlayedDeathSound)
             {
                 AudioSource.PlayClipAtPoint(BossDeathSound.clip, transform.position);
+                hasPlayedDeathSound = true;
             }
+            animator.ResetTrigger("Hit");
 
             StartCoroutine(TimingToRevive());
         }
         else
         {
-            StopAllCoroutines();
             animator.SetBool("Stunned", false);
             timingReady = false;
             ContagemBoss.gameObject.SetActive(false);
-            if (ContagemRegressiva.isPlaying)
-            {
-                ContagemRegressiva.Stop();
-            }
+            ContagemRegressiva.Stop();
         }
 
         if (timingReady)

@@ -13,35 +13,35 @@ public class CharacterMultiplayerAttack : MonoBehaviour
     {
         if (hasHit) return;
 
-        // Ignora se colidir com o próprio player
-        NetworkObject otherNetworkObj = other.GetComponent<NetworkObject>();
-        NetworkObject myNetworkObj = GetComponent<NetworkObject>();
-        if (otherNetworkObj != null && otherNetworkObj == myNetworkObj) return;
+        // // Ignora se colidir com o próprio player
+        // NetworkObject otherNetworkObj = other.GetComponent<NetworkObject>();
+        // NetworkObject myNetworkObj = GetComponent<NetworkObject>();
+        // if (otherNetworkObj != null && otherNetworkObj == myNetworkObj) return;
 
-        // Tenta pegar Health do alvo
-        Health targetHealth = other.GetComponent<Health>();
-        if (targetHealth == null) return;
+        // // Tenta pegar Health do alvo
+        // Health targetHealth = other.GetComponent<Health>();
+        // if (targetHealth == null) return;
 
-        // Calcula direção do knockback
-        Vector3 knockbackDir = (other.transform.position - transform.position).normalized;
+        // // Calcula direção do knockback
+        // Vector3 knockbackDir = (other.transform.position - transform.position).normalized;
 
-        // Só quem tem autoridade do alvo aplica dano e knockback
-        NetworkObject targetNetworkObj = other.GetComponent<NetworkObject>();
-        if (targetNetworkObj != null && targetNetworkObj.HasStateAuthority)
-        {
-            KnockReceptor knock = other.GetComponent<KnockReceptor>();
-            if (knock != null)
-            {
-                knock.ApplyKnockback(knockbackDir, knockbackForce);
-            }
+        // // Só quem tem autoridade do alvo aplica dano e knockback
+        // NetworkObject targetNetworkObj = other.GetComponent<NetworkObject>();
+        // if (targetNetworkObj != null && targetNetworkObj.HasStateAuthority)
+        // {
+        //     KnockReceptor knock = other.GetComponent<KnockReceptor>();
+        //     if (knock != null)
+        //     {
+        //         knock.ApplyKnockback(knockbackDir, knockbackForce);
+        //     }
 
-            targetHealth.TakeDamage(damage);
+        //     targetHealth.TakeDamage(damage);
 
-            // RPC para animação de hit
-            RPC_PlayHitAnimation(targetNetworkObj);
-        }
+        //     // RPC para animação de hit
+        //     RPC_PlayHitAnimation(targetNetworkObj);
+        // }
 
-        hasHit = true;
+        // hasHit = true;
     }
 
 

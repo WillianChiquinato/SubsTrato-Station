@@ -41,12 +41,13 @@ public class DamageWeapons : MonoBehaviour
                 Debug.LogError("Animator não encontrado no boss");
             }
         }
-        else if (ObjectCollider.CompareTag("Enemy"))
+
+        if (ObjectCollider.CompareTag("Enemy"))
         {
-            if (this.gameObject.CompareTag("Bullet"))
-            {
-                return;
-            }
+            // if (this.gameObject.CompareTag("Bullet"))
+            // {
+            //     return;
+            // }
 
             hasHit = true;
 

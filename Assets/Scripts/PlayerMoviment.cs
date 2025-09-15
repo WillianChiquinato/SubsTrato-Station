@@ -141,8 +141,10 @@ public class PlayerMoviment : MonoBehaviour
                 }
                 else
                 {
+                    QuestSystem.instance.questArea = false;
+                    QuestSystem.instance.isQuestAtivo = false;
                     canMove = true;
-
+                    
                     Cursor.lockState = CursorLockMode.Locked;
                     Cursor.visible = false;
                 }

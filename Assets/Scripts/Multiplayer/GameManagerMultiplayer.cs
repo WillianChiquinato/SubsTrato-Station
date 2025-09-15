@@ -107,8 +107,6 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         }
 
         runner.AddCallbacks(this);
-
-        // Log
         Debug.Log($"Iniciando jogo no modo: {mode} com a sala: {_roomName}");
 
         if (levelLoaderMenu != null)
@@ -166,7 +164,7 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         if (GetSceneInfo() == SceneRef.FromIndex(1).ToString())
         {
             roomCountPlayers = GameObject.Find("TextoConnect")?.GetComponent<TextMeshProUGUI>();
-            readyButton = GameObject.Find("readyButton")?.GetComponent<Button>();
+            readyButton = GameObject.FindGameObjectWithTag("BtnReady").GetComponent<Button>();
             levelLoader = FindFirstObjectByType<LevelLoaderGame>();
 
             if (Runner.IsSceneAuthority)
@@ -174,7 +172,6 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
                 roomCountPlayers.text = $"{Runner.ActivePlayers.Count()} / 4";
             }
         }
-
     }
 
     public void IsplayerReadying()
@@ -188,8 +185,10 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         {
             readyButton.interactable = false;
         }
+        
         if (Runner.IsSceneAuthority)
         {
+            Debug.Log($"Jogador {Runner.LocalPlayer} marcou como pronto. Total prontos: {_playersReady.Count}/{Runner.ActivePlayers.Count()}");
             // Verifica se todos estão prontos
             if (_playersReady.Count >= _minPlayersToStartGame &&
                 _playersReady.Count == Runner.ActivePlayers.Count())

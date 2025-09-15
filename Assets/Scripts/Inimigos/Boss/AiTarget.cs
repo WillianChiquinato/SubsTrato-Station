@@ -42,9 +42,6 @@ public class AiTarget : MonoBehaviour
         damageCollider = GetComponentInChildren<SphereCollider>();
         damageCollider.enabled = false;
         health = GetComponent<Health>();
-
-        //Debug por enquanto.
-        //target = GameObject.FindGameObjectWithTag("Player").transform;
     }
 
     void Update()
@@ -69,6 +66,7 @@ public class AiTarget : MonoBehaviour
 
                 if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.8f)
                 {
+                    isAttacking = false;
                     GetComponentInChildren<AttackBoss>().ResetAttack();
                 }
             }
