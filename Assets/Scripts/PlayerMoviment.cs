@@ -155,7 +155,7 @@ public class PlayerMoviment : MonoBehaviour
             {
                 if (estamina > 0 && !isStealth)
                 {
-                    estamina -= 2f * Time.deltaTime;
+                    estamina -= 1.6f * Time.deltaTime;
                 }
                 else if (isStealth)
                 {

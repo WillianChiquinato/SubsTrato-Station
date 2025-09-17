@@ -3,30 +3,42 @@ using UnityEngine.Animations.Rigging;
 
 public class PlayerCam : MonoBehaviour
 {
+    [Header("Sensibilidade do mouse")]
     public float sensX = 100f;
     public float sensY = 100f;
 
+    [Header("Referências")]
     public Transform playerBody;
     public PlayerMoviment player;
-    private float xRotation = 0f;
-    private float mouseX;
-    private float mouseY;
-
+    public Transform cameraAnchor;
     public TwoBoneIKConstraint rightArmIK;
     public TwoBoneIKConstraint leftArmIK;
 
-    public Transform cameraAnchor;
-    public float followSpeed = 15f;
+    [Header("Configuração de movimento")]
+    public float followSmoothTime = 0.1f; 
+
+    private float xRotation = 0f;
+    private float lookX;
+    private float lookY;
+    private Vector3 camVelocity;
     private bool wasLocked = true;
 
     void Start()
     {
         player = playerBody.GetComponent<PlayerMoviment>();
+
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
         rightArmIK.weight = 0;
         leftArmIK.weight = 0;
+    }
+
+    void Update()
+    {
+        // Leitura de input do mouse (Update é mais estável para input)
+        lookX = Input.GetAxis("Mouse X") * sensX * Time.deltaTime;
+        lookY = Input.GetAxis("Mouse Y") * sensY * Time.deltaTime;
     }
 
     void LateUpdate()
@@ -40,73 +52,70 @@ public class PlayerCam : MonoBehaviour
 
         if (!player.canMove)
         {
-            // Enquanto não pode se mover → só segue o anchor sem resetar posição bruscamente
+            // Enquanto não pode se mover → segue o anchor suavemente
             transform.SetParent(cameraAnchor);
 
             Vector3 localOffset = new Vector3(0f, 0.13f, -0.45f);
-            transform.localPosition = Vector3.Lerp(transform.localPosition, localOffset, Time.deltaTime * 5f);
+            transform.localPosition = Vector3.Lerp(transform.localPosition,
+                                                   localOffset,
+                                                   Time.deltaTime * 5f);
 
             transform.localRotation = Quaternion.identity;
 
             wasLocked = true;
             return;
         }
-        else
+        else if (wasLocked)
         {
-            if (wasLocked)
-            {
-                // Saiu da intro → "solta" a câmera mantendo posição/rotação atuais
+            // Saiu da intro → "solta" a câmera mantendo posição/rotação atuais
+            if (transform.parent != null)
                 transform.SetParent(null);
-                wasLocked = false;
-            }
+            wasLocked = false;
         }
 
         if (player.isPickingUp)
         {
-            // Talvez você queira ajustar os alvos do IK ou pesos durante o "picking up"
+            // Se estiver pegando objeto, não atualiza rotação/posição
             return;
         }
+        
 
+        // IK dos braços
         if (player.aimAnimActive)
         {
-            leftArmIK.weight = Mathf.Lerp(leftArmIK.weight, 1, Time.deltaTime * 5f);
+            leftArmIK.weight = Mathf.Lerp(leftArmIK.weight, 1f, Time.deltaTime * 5f);
             rightArmIK.weight = Mathf.Lerp(rightArmIK.weight, 0.7f, Time.deltaTime * 5f);
         }
         else
         {
-            leftArmIK.weight = Mathf.Lerp(leftArmIK.weight, 0, Time.deltaTime * 5f);
-            rightArmIK.weight = Mathf.Lerp(rightArmIK.weight, 0, Time.deltaTime * 5f);
+            leftArmIK.weight = Mathf.Lerp(leftArmIK.weight, 0f, Time.deltaTime * 5f);
+            rightArmIK.weight = Mathf.Lerp(rightArmIK.weight, 0f, Time.deltaTime * 5f);
         }
 
-        Vector3 offset = Vector3.zero;
+        // Offset dependendo do modo furtivo
+        Vector3 offset = player.isStealth
+            ? new Vector3(0f, 0.2f, -0.12f)
+            : new Vector3(0f, 0.01f, -0.11f);
 
-
-        if (player.isStealth)
+        if (transform.parent != null)
         {
-            offset = new Vector3(0f, 0.2f, -0.12f);
-        }
-        else
-        {
-            offset = new Vector3(0f, 0.01f, -0.11f);
+            transform.SetParent(null);
         }
 
-        transform.SetParent(null);
+        // Rotação horizontal do corpo
+        playerBody.Rotate(Vector3.up * lookX);
 
-        float mouseX = Input.GetAxis("Mouse X") * sensX * Time.deltaTime;
-        float mouseY = Input.GetAxis("Mouse Y") * sensY * Time.deltaTime;
+        // Rotação vertical da câmera
+        xRotation = Mathf.Clamp(xRotation - lookY, -90f, 90f);
 
-        // rotação do corpo (horizontal)
-        playerBody.Rotate(Vector3.up * mouseX);
-
-        // rotação vertical só do mouse
-        xRotation -= mouseY;
-        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
-
-        // posição suavizada (só pega a posição do anchor)
+        // Posição suavizada em relação ao anchor
         Vector3 desiredPos = cameraAnchor.position + offset;
-        transform.position = Vector3.Lerp(transform.position, desiredPos, Time.deltaTime * followSpeed);
+        transform.position = Vector3.SmoothDamp(transform.position,
+                                                desiredPos,
+                                                ref camVelocity,
+                                                followSmoothTime);
 
-        // rotação da câmera só pelo mouse, ignorando balanço da cabeça
+        // Aplicar rotação final
         transform.rotation = Quaternion.Euler(xRotation, playerBody.eulerAngles.y, 0f);
     }
 }

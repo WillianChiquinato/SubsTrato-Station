@@ -8,9 +8,8 @@ public class ChipSystem : MonoBehaviour
 
     void Update()
     {
-        if (chipSystemCount > 3)
+        if (chipSystemCount >= 3)
         {
-            // Adicionar partículas ou efeitos visuais (TODO).
             AberturaFinal = true;
             if (AberturaFinal)
             {
