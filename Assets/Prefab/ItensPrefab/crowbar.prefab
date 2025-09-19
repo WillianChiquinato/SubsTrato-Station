@@ -236,6 +236,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ed7662ee7ba2544987f5c8e496966fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  shootSound: {fileID: 0}
   shootCooldown: 0
   <OnUse>k__BackingField:
     m_PersistentCalls:
