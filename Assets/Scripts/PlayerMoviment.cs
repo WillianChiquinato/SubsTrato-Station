@@ -1,14 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Fusion;
-using Fusion.Sockets;
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
-public class PlayerMoviment : MonoBehaviour
+public class PlayerMoviment : NetworkBehaviour
 {
+    public NetworkObject networkObject;
+
     [Header("Movement")]
     public float moveSpeed;
     public Transform orientation;
@@ -16,10 +12,10 @@ public class PlayerMoviment : MonoBehaviour
     public bool aimActive = false;
     public bool aimAnimActive = false;
 
+    Vector3 moveDirection;
     float horizontalInput;
     float verticalInput;
 
-    Vector3 moveDirection;
     CharacterController character;
     public CapsuleCollider capsuleColliderCharacter;
     public Animator animator;
@@ -32,7 +28,6 @@ public class PlayerMoviment : MonoBehaviour
     public float gravity = -9.81f;
 
     [Header("JumpKey")]
-    public KeyCode jumpKey = KeyCode.Space;
     public float airControlMultiplier;
 
 
@@ -40,7 +35,6 @@ public class PlayerMoviment : MonoBehaviour
     public bool isGrounded;
     public Transform groundCheck;
     public float groundDistance = 0.4f;
-    public LayerMask groundMask;
 
 
     [Header("Pick up Itens")]
@@ -88,7 +82,17 @@ public class PlayerMoviment : MonoBehaviour
 
     void Awake()
     {
-        DeathUI.SetActive(false);
+        networkObject = GetComponent<NetworkObject>();
+
+        if (networkObject == null)
+        {
+            Debug.LogError("NetworkObject não encontrado no Awake!");
+        }
+        else
+        {
+            Debug.Log($"NetworkObject encontrado no Awake: {networkObject.Id}");
+        }
+
         inventory = GetComponent<PlayerInventory>();
     }
 
@@ -96,17 +100,71 @@ public class PlayerMoviment : MonoBehaviour
     {
         character = GetComponent<CharacterController>();
         capsuleColliderCharacter = GetComponent<CapsuleCollider>();
-        pickUpUI.SetActive(false);
-
         animator = GetComponent<Animator>();
         health = GetComponent<Health>();
         estaminaBar = GetComponent<EstaminaBar>();
 
         animator.SetBool("StartGame", true);
+
+        if (!networkObject.HasInputAuthority)
+        {
+            // Desativa câmera e componentes locais
+            playerCameraTransform.gameObject.SetActive(false);
+            return;
+        }
+
+        //References UI.
+        var ui = UIreferences.Instance;
+        DeathUI = ui.DeathUI;
+        pickUpUI = ui.PickUpItemUI;
+        DeathUI.SetActive(false);
+        pickUpUI.SetActive(false);
     }
 
-    public void Update()
+    public override void Spawned()
     {
+        Debug.Log($"=== SPAWNED CHAMADO ===");
+        Debug.Log($"GameObject: {gameObject.name}");
+        Debug.Log($"NetworkObject: {networkObject != null}");
+        Debug.Log($"HasInputAuthority: {networkObject?.HasInputAuthority}");
+        Debug.Log($"Runner: {Runner != null}");
+        Debug.Log($"Runner name: {(Runner != null ? Runner.name : "NULL")}");
+        Debug.Log($"Object: {Object != null}");
+        Debug.Log($"Object name: {(Object != null ? Object.name : "NULL")}");
+
+        if (networkObject != null && networkObject.HasInputAuthority)
+        {
+            Debug.Log("Configurando para jogador local");
+            UIreferences.Instance.player = gameObject;
+        }
+
+        if (Runner == null)
+        {
+            Debug.LogError("Runner ainda é null após Spawned()! Isso é um problema grave.");
+
+            // Tentar encontrar o Runner manualmente
+            NetworkRunner foundRunner = FindFirstObjectByType<NetworkRunner>();
+            if (foundRunner != null)
+            {
+                Debug.Log($"Runner encontrado manualmente: {foundRunner.name}");
+            }
+            else
+            {
+                Debug.LogError("Nenhum NetworkRunner encontrado na cena!");
+            }
+        }
+        else
+        {
+            Debug.Log("Runner encontrado: " + Runner.name);
+        }
+    }
+
+
+    public override void FixedUpdateNetwork()
+    {
+        if (!networkObject.HasInputAuthority) return;
+        if (!GetInput(out NetworkInputData inputData)) return;
+
         isGrounded = character.isGrounded;
         animator.SetBool("IsGround", isGrounded);
         animator.SetBool("Jump", isGrounded);
@@ -144,7 +202,7 @@ public class PlayerMoviment : MonoBehaviour
                     QuestSystem.instance.questArea = false;
                     QuestSystem.instance.isQuestAtivo = false;
                     canMove = true;
-                    
+
                     Cursor.lockState = CursorLockMode.Locked;
                     Cursor.visible = false;
                 }
@@ -155,18 +213,18 @@ public class PlayerMoviment : MonoBehaviour
             {
                 if (estamina > 0 && !isStealth)
                 {
-                    estamina -= 1.6f * Time.deltaTime;
+                    estamina -= 1.6f * Time.fixedDeltaTime;
                 }
                 else if (isStealth)
                 {
-                    estamina += 1f * Time.deltaTime;
+                    estamina += 1f * Time.fixedDeltaTime;
                 }
             }
             else
             {
                 if (estamina < 50f)
                 {
-                    estamina += 2f * Time.deltaTime;
+                    estamina += 2f * Time.fixedDeltaTime;
                 }
             }
 
@@ -181,8 +239,8 @@ public class PlayerMoviment : MonoBehaviour
 
             if (knockbackTimer > 0)
             {
-                character.Move(knockbackVelocity * Time.deltaTime);
-                knockbackTimer -= Time.deltaTime;
+                character.Move(knockbackVelocity * Time.fixedDeltaTime);
+                knockbackTimer -= Time.fixedDeltaTime;
             }
 
             if (canMove)
@@ -191,7 +249,7 @@ public class PlayerMoviment : MonoBehaviour
                 DropItem();
                 UseItem();
 
-                if (Input.GetKey(jumpKey) && isGrounded && !isStealth && !aimActive)
+                if (inputData.jumpPressed && isGrounded && !isStealth && !aimActive)
                 {
                     Jump();
                 }
@@ -213,7 +271,7 @@ public class PlayerMoviment : MonoBehaviour
                     ItemFlutuante.transform.position = Vector3.Lerp(
                         ItemFlutuante.transform.position,
                         worldPos,
-                        Time.deltaTime * itemFlutuanteSpeed
+                        Time.fixedDeltaTime * itemFlutuanteSpeed
                     );
                 }
 
@@ -221,72 +279,29 @@ public class PlayerMoviment : MonoBehaviour
                 if (myHandItem != null)
                 {
                     // Movement and gravity still need to be applied even if holding an item
-                    movePlayer();
+                    MovePlayer();
 
                     if (isGrounded && velocity.y < 0)
                     {
                         velocity.y = -2f;
                     }
 
-                    velocity.y += gravity * Time.deltaTime;
-
-                    Vector3 finalMove = moveDirection * moveSpeed;
+                    velocity.y += gravity * Time.fixedDeltaTime;
+                    Vector2 moveInput = new Vector2(horizontalInput, verticalInput).normalized;
+                    Vector3 finalMove = new Vector3(moveInput.x, 0, moveInput.y) * moveSpeed;
 
                     if (!isGrounded)
+                    {
                         finalMove *= airControlMultiplier;
+                    }
 
                     finalMove.y = velocity.y;
-                    character.Move(finalMove * Time.deltaTime);
+                    character.Move(finalMove * Time.fixedDeltaTime);
 
                     return;
                 }
 
-                if (Physics.Raycast(playerCameraTransform.position, playerCameraTransform.forward, out hit, pickUpDistance, pickUpLayer))
-                {
-                    HightLights highlight = hit.collider.GetComponent<HightLights>();
-                    if (highlight != null)
-                    {
-                        if (inventory.myHandItem == null)
-                        {
-                            highlight.ToggleHighlight(true);
-                            pickUpUI.SetActive(true);
-
-                            if (Input.GetKeyDown(KeyCode.E))
-                            {
-                                if (hit.collider.CompareTag("Quest"))
-                                {
-                                    hit.collider.GetComponent<QuestTrigger>().TriggerQuest();
-                                }
-                                else
-                                {
-                                    StartPickUp();
-                                }
-                            }
-                        }
-                    }
-                }
-                else if (Physics.Raycast(playerCameraTransform.position, playerCameraTransform.forward, out hit, pickUpDistance, interactLayer))
-                {
-                    ChipSystem chip = hit.collider.GetComponent<ChipSystem>();
-                    HightLights highlight = hit.collider.GetComponent<HightLights>();
-                    if (chip != null && highlight != null)
-                    {
-                        if (inventory.myHandItem != null && inventory.myHandItem.GetComponent<Chip>())
-                        {
-                            highlight.ToggleHighlight(true);
-                            pickUpUI.SetActive(true);
-
-                            if (Input.GetKeyDown(KeyCode.E))
-                            {
-                                chip.Interact();
-                                Destroy(inventory.myHandItem);
-                                inventory.hotbarItems[inventory.selectedSlot] = null;
-                                inventory.myHandItem = null;
-                                inventory.UpdateHotbarUI();
-                            }
-                        }
-                    }
-                }
+                CheckPickUp();
             }
             else
             {
@@ -296,14 +311,14 @@ public class PlayerMoviment : MonoBehaviour
             }
 
             // Movement and gravity
-            movePlayer();
+            MovePlayer();
 
             if (isGrounded && velocity.y < 0)
             {
                 velocity.y = -2f;
             }
 
-            velocity.y += gravity * Time.deltaTime;
+            velocity.y += gravity * Time.fixedDeltaTime;
 
             Vector3 move = moveDirection * moveSpeed;
 
@@ -313,7 +328,7 @@ public class PlayerMoviment : MonoBehaviour
             }
 
             move.y = velocity.y;
-            character.Move(move * Time.deltaTime);
+            character.Move(move * Time.fixedDeltaTime);
         }
         else
         {
@@ -329,22 +344,28 @@ public class PlayerMoviment : MonoBehaviour
 
     private void MyInput()
     {
-        horizontalInput = Input.GetAxis("Horizontal");
-        verticalInput = Input.GetAxis("Vertical");
-        isStealth = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+        if (!GetInput(out NetworkInputData inputData)) return;
+
+        horizontalInput = inputData.moveInput.x;
+        verticalInput = inputData.moveInput.y;
+        isStealth = inputData.stealthPressed;
         if (isStealth)
         {
             horizontalInput *= 0.4f;
             verticalInput *= 0.4f;
-            float stealthColliderHeight = Mathf.Lerp(capsuleColliderCharacter.height, 2.1f, Time.deltaTime * 10f);
-            float stealthCharacterHeight = Mathf.Lerp(character.height, 2.1f, Time.deltaTime * 10f);
-            capsuleColliderCharacter.height = stealthColliderHeight;
+            float targetHeight = isStealth ? 2.1f : 2.763223f;
+            if (Mathf.Abs(capsuleColliderCharacter.height - targetHeight) > 0.01f)
+            {
+                capsuleColliderCharacter.height = Mathf.Lerp(capsuleColliderCharacter.height, targetHeight, Time.deltaTime * 10f);
+            }
+
+            float stealthCharacterHeight = Mathf.Lerp(character.height, 2.1f, Time.fixedDeltaTime * 10f);
             character.height = stealthCharacterHeight;
         }
         else
         {
-            float normalColliderHeight = Mathf.Lerp(capsuleColliderCharacter.height, 2.763223f, Time.deltaTime * 10f);
-            float normalCharacterHeight = Mathf.Lerp(character.height, 2.763223f, Time.deltaTime * 10f);
+            float normalColliderHeight = Mathf.Lerp(capsuleColliderCharacter.height, 2.763223f, Time.fixedDeltaTime * 10f);
+            float normalCharacterHeight = Mathf.Lerp(character.height, 2.763223f, Time.fixedDeltaTime * 10f);
             capsuleColliderCharacter.height = normalColliderHeight;
             character.height = normalCharacterHeight;
         }
@@ -357,7 +378,7 @@ public class PlayerMoviment : MonoBehaviour
         animator.SetBool("IsStealth", isStealth);
     }
 
-    private void movePlayer()
+    private void MovePlayer()
     {
         Vector3 forward = playerCameraTransform.forward;
         Vector3 right = playerCameraTransform.right;
@@ -376,8 +397,62 @@ public class PlayerMoviment : MonoBehaviour
         velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
     }
 
+    private void CheckPickUp()
+    {
+        if (!GetInput(out NetworkInputData inputData)) return;
+
+        if (Physics.Raycast(playerCameraTransform.position, playerCameraTransform.forward, out hit, pickUpDistance, pickUpLayer))
+        {
+            HightLights highlight = hit.collider.GetComponent<HightLights>();
+            if (highlight != null)
+            {
+                if (inventory.myHandItem == null)
+                {
+                    highlight.ToggleHighlight(true);
+                    pickUpUI.SetActive(true);
+
+                    if (inputData.interactPressed)
+                    {
+                        if (hit.collider.CompareTag("Quest"))
+                        {
+                            hit.collider.GetComponent<QuestTrigger>().TriggerQuest();
+                        }
+                        else
+                        {
+                            StartPickUp();
+                        }
+                    }
+                }
+            }
+        }
+        else if (Physics.Raycast(playerCameraTransform.position, playerCameraTransform.forward, out hit, pickUpDistance, interactLayer))
+        {
+            ChipSystem chip = hit.collider.GetComponent<ChipSystem>();
+            HightLights highlight = hit.collider.GetComponent<HightLights>();
+            if (chip != null && highlight != null)
+            {
+                if (inventory.myHandItem != null && inventory.myHandItem.GetComponent<Chip>())
+                {
+                    highlight.ToggleHighlight(true);
+                    pickUpUI.SetActive(true);
+
+                    if (inputData.interactPressed)
+                    {
+                        chip.Interact();
+                        Destroy(inventory.myHandItem);
+                        inventory.hotbarItems[inventory.selectedSlot] = null;
+                        inventory.myHandItem = null;
+                        inventory.UpdateHotbarUI();
+                    }
+                }
+            }
+        }
+    }
+
     void StartPickUp()
     {
+        if (!networkObject.HasInputAuthority) return;
+
         if (hit.collider != null && myHandItem == null && !isPickingUp)
         {
             Rigidbody rb = hit.collider.GetComponent<Rigidbody>();
@@ -423,6 +498,7 @@ public class PlayerMoviment : MonoBehaviour
 
     void PickUp()
     {
+        if (!networkObject.HasInputAuthority) return;
         if (myHandItem == null) return;
 
         isPickingUp = false;
@@ -458,62 +534,59 @@ public class PlayerMoviment : MonoBehaviour
 
         Debug.Log("Item pego com sucesso!");
     }
+
     public void DropItem()
     {
-        if (Input.GetKeyDown(KeyCode.Q))
+        if (!GetInput(out NetworkInputData inputData)) return;
+        if (!networkObject.HasInputAuthority) return;
+        if (!inputData.dropItemPressed) return;
+        if (inventory.myHandItem == null) return;
+
+        // Sempre usa RPC, independente de ser servidor ou cliente
+        RPC_RequestDropItem();
+    }
+
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    private void RPC_RequestDropItem()
+    {
+        Vector3 spawnPos = playerCameraTransform.position + playerCameraTransform.transform.forward * 1.2f + playerCameraTransform.up * -0.2f;
+
+        ItemClass itemClass = inventory.myHandItem.GetComponent<ItemClass>();
+        if (itemClass == null) return;
+        GameObject dropPrefab = ItemDatabase.GetPrefabForItem(itemClass.itemSO);
+        if (dropPrefab == null) return;
+
+        var droppedItem = Runner.Spawn(dropPrefab, Vector3.zero, Quaternion.identity, Object.InputAuthority);
+        droppedItem.transform.position = spawnPos;
+
+        // Se tiver Rigidbody, aplica força
+        if (droppedItem.TryGetComponent<Rigidbody>(out var rb))
         {
-            ItemFlutuante = null;
-            if (myHandItem != null)
-            {
-                myHandItem.AddComponent<Rigidbody>();
-                myHandItem = null;
-            }
-
-            if (inventory.myHandItem != null)
-            {
-                inventory.myHandItem.AddComponent<Rigidbody>();
-                inventory.myHandItem.AddComponent<HightLights>();
-
-                var render1 = inventory.myHandItem.GetComponent<HightLights>().renderers = new List<Renderer>(inventory.myHandItem.GetComponents<Renderer>());
-                if (render1 == null)
-                {
-                    inventory.myHandItem.GetComponent<HightLights>().renderers = new List<Renderer>(inventory.myHandItem.GetComponentsInChildren<Renderer>());
-                }
-                Rigidbody rb = inventory.myHandItem.GetComponent<Rigidbody>();
-
-                inventory.myHandItem.transform.SetParent(null);
-                if (inventory.myHandItem.GetComponent<Item>())
-                {
-                    Debug.Log("É um item do cenário, sem jogar item!!");
-                }
-                else
-                {
-                    aimAnimActive = false;
-                    aimActive = false;
-                    orientation.GetComponent<PlayerCam>().rightArmIK.weight = 0;
-                    orientation.GetComponent<PlayerCam>().leftArmIK.weight = 0;
-
-                    //quando dropar o item, tira o slot do item selecionado.
-                    if (inventory != null)
-                    {
-                        rb.AddForce(playerCameraTransform.forward * 2f, ForceMode.Impulse);
-                        rb.AddForce(playerCameraTransform.up * 4f, ForceMode.Impulse);
-                        inventory.hotbarItems[inventory.selectedSlot] = null;
-                        inventory.justDroppedItem = true;
-                        inventory.UpdateHotbarUI();
-                    }
-                    else
-                    {
-                        Debug.LogWarning("PlayerInventory não encontrado no objeto.");
-                    }
-                }
-                inventory.myHandItem = null;
-            }
+            rb.position = spawnPos;
+            rb.AddForce(playerCameraTransform.transform.forward * 5f + playerCameraTransform.up * 4f, ForceMode.Impulse);
         }
+
+        RPC_ClearInventory();
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_ClearInventory()
+    {
+        if (inventory.myHandItem != null)
+        {
+            Destroy(inventory.myHandItem);
+        }
+
+        inventory.hotbarItems[inventory.selectedSlot] = null;
+        inventory.myHandItem = null;
+        inventory.UpdateHotbarUI();
     }
 
     public void UseItem()
     {
+        if (!GetInput(out NetworkInputData inputData)) return;
+        if (!networkObject.HasInputAuthority) return;
+
         if (inventory.myHandItem != null)
         {
             HightLights hl = inventory.myHandItem.GetComponent<HightLights>();
@@ -521,7 +594,7 @@ public class PlayerMoviment : MonoBehaviour
 
             if (inventory.myHandItem.GetComponent<Food>() != null)
             {
-                if (Input.GetMouseButtonDown(0))
+                if (inputData.useItemPressed)
                 {
                     Debug.Log("Usando item de comida: " + inventory.myHandItem.name);
                     IUsable usable = inventory.myHandItem.GetComponent<IUsable>();
@@ -539,29 +612,21 @@ public class PlayerMoviment : MonoBehaviour
                 if (inventory.myHandItem.GetComponent<ItemArremessavel>())
                 {
                     //Segurar botao direito.
-                    if (Input.GetMouseButton(1))
+                    if (inputData.prepareArremessoPressed)
                     {
                         Arremessar = true;
                     }
 
-                    if (Input.GetMouseButtonUp(1))
+                    if (inputData.arremessarPressed)
                     {
                         Arremessar = false;
-                        Destroy(inventory.myHandItem);
-
-                        myHandItem = null;
-                        inventory.myHandItem = null;
-                        inventory.hotbarItems[inventory.selectedSlot] = null;
-                        inventory.justDroppedItem = true;
-                        inventory.UpdateHotbarUI();
-                        Debug.Log("Item arremessável destruído.");
                     }
                 }
                 else
                 {
                     if (!inventory.myHandItem.GetComponent<Chip>())
                     {
-                        if (Input.GetMouseButtonDown(1))
+                        if (inputData.aimActive)
                         {
                             Invoke(nameof(ToggleAim), 0.5f);
                             aimAnimActive = !aimAnimActive;
@@ -577,7 +642,7 @@ public class PlayerMoviment : MonoBehaviour
                             }
                         }
 
-                        if (Input.GetMouseButtonDown(0) && aimActive)
+                        if (inputData.useItemPressed && aimActive)
                         {
                             if (isStealth && isMoving)
                             {

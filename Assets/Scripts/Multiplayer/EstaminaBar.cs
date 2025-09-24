@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,9 +11,16 @@ public class EstaminaBar : MonoBehaviour
 
     void Start()
     {
-        estaminaDoPlayer = GameObject.FindFirstObjectByType<PlayerMoviment>();
-
+        StartCoroutine(DelayConnectedBars());
         sliderEstamina = GetComponentInChildren<Slider>();
+    }
+
+    IEnumerator DelayConnectedBars()
+    {
+        yield return new WaitForSeconds(1f);
+        var ui = UIreferences.Instance;
+
+        estaminaDoPlayer = ui.player.GetComponent<PlayerMoviment>();
         maxEstamina = estaminaDoPlayer.estamina;
         sliderEstamina.maxValue = maxEstamina;
     }

@@ -7,7 +7,7 @@ public class Weapon : MonoBehaviour, IUsable
 {
     [Header("Sounds")]
     public AudioSource shootSound;
-    
+
     [Header("Shooting Settings")]
     private float lastShootTime = -999f;
     [SerializeField] private float shootCooldown = 0.7f;
@@ -29,7 +29,11 @@ public class Weapon : MonoBehaviour, IUsable
     void Start()
     {
         itemClass = GetComponent<ItemClass>();
-        anim = GetComponent<Animator>();
+        if (WeaponType.Target != Type)
+        {
+            anim = GetComponent<Animator>();
+        }
+        
         player = FindFirstObjectByType<PlayerMoviment>();
     }
 
@@ -140,7 +144,7 @@ public class Weapon : MonoBehaviour, IUsable
     public void PlayShootAnimation()
     {
         if (CurrentAmmo < 0) return;
-        
+
         if (anim != null)
         {
             if (CurrentAmmo < 1)

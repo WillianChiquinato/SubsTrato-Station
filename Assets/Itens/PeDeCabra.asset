@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 982ec3615e96daf47a6b9c5171335ca2, type: 3}
   m_Name: PeDeCabra
   m_EditorClassIdentifier: 
+  id: 6
   itemType: 0
   itemName: PeDeCabra
   itemIcon: {fileID: 21300000, guid: d6c129b3af334684595afb7a301c3aa8, type: 3}

@@ -8,14 +8,13 @@ public class PlayerCam : MonoBehaviour
     public float sensY = 100f;
 
     [Header("Referências")]
-    public Transform playerBody;
     public PlayerMoviment player;
     public Transform cameraAnchor;
     public TwoBoneIKConstraint rightArmIK;
     public TwoBoneIKConstraint leftArmIK;
 
     [Header("Configuração de movimento")]
-    public float followSmoothTime = 0.1f; 
+    public float followSmoothTime = 0.1f;
 
     private float xRotation = 0f;
     private float lookX;
@@ -23,26 +22,52 @@ public class PlayerCam : MonoBehaviour
     private Vector3 camVelocity;
     private bool wasLocked = true;
 
+    private PlayerMoviment localPlayer;
+
     void Start()
     {
-        player = playerBody.GetComponent<PlayerMoviment>();
-
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-
-        rightArmIK.weight = 0;
-        leftArmIK.weight = 0;
+        // Desativa a câmera inicialmente
+        GetComponent<Camera>().enabled = false;
+        GetComponent<AudioListener>().enabled = false;
     }
 
     void Update()
     {
-        // Leitura de input do mouse (Update é mais estável para input)
+        // Se ainda não encontrou o player local, procura
+        if (localPlayer == null)
+        {
+            var players = FindObjectsOfType<PlayerMoviment>();
+            foreach (var p in players)
+            {
+                if (p.networkObject.HasInputAuthority)
+                {
+                    localPlayer = p;
+                    player = localPlayer;
+
+                    // Ativa a câmera só para o player local
+                    GetComponent<Camera>().enabled = true;
+                    GetComponent<AudioListener>().enabled = true;
+
+                    Cursor.lockState = CursorLockMode.Locked;
+                    Cursor.visible = false;
+
+                    rightArmIK.weight = 0;
+                    leftArmIK.weight = 0;
+                    break;
+                }
+            }
+            if (localPlayer == null) return; // Ainda não encontrou
+        }
+
+        // Input do mouse só para o player local
         lookX = Input.GetAxis("Mouse X") * sensX * Time.deltaTime;
         lookY = Input.GetAxis("Mouse Y") * sensY * Time.deltaTime;
     }
 
     void LateUpdate()
     {
+        if (localPlayer == null) return;
+
         if (!player.health.isAlive)
         {
             leftArmIK.weight = 0;
@@ -52,14 +77,12 @@ public class PlayerCam : MonoBehaviour
 
         if (!player.canMove)
         {
-            // Enquanto não pode se mover → segue o anchor suavemente
             transform.SetParent(cameraAnchor);
 
             Vector3 localOffset = new Vector3(0f, 0.13f, -0.45f);
             transform.localPosition = Vector3.Lerp(transform.localPosition,
                                                    localOffset,
                                                    Time.deltaTime * 5f);
-
             transform.localRotation = Quaternion.identity;
 
             wasLocked = true;
@@ -67,18 +90,12 @@ public class PlayerCam : MonoBehaviour
         }
         else if (wasLocked)
         {
-            // Saiu da intro → "solta" a câmera mantendo posição/rotação atuais
             if (transform.parent != null)
                 transform.SetParent(null);
             wasLocked = false;
         }
 
-        if (player.isPickingUp)
-        {
-            // Se estiver pegando objeto, não atualiza rotação/posição
-            return;
-        }
-        
+        if (player.isPickingUp) return;
 
         // IK dos braços
         if (player.aimAnimActive)
@@ -98,12 +115,10 @@ public class PlayerCam : MonoBehaviour
             : new Vector3(0f, 0.01f, -0.11f);
 
         if (transform.parent != null)
-        {
             transform.SetParent(null);
-        }
 
         // Rotação horizontal do corpo
-        playerBody.Rotate(Vector3.up * lookX);
+        player.transform.Rotate(Vector3.up * lookX);
 
         // Rotação vertical da câmera
         xRotation = Mathf.Clamp(xRotation - lookY, -90f, 90f);
@@ -116,6 +131,6 @@ public class PlayerCam : MonoBehaviour
                                                 followSmoothTime);
 
         // Aplicar rotação final
-        transform.rotation = Quaternion.Euler(xRotation, playerBody.eulerAngles.y, 0f);
+        transform.rotation = Quaternion.Euler(xRotation, player.transform.eulerAngles.y, 0f);
     }
 }

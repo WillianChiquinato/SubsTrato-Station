@@ -571,6 +571,7 @@ MonoBehaviour:
   _lobbySceneIndex: 1
   _gameplaySceneIndex: 2
   _playerPrefab: {fileID: 375807728519153052, guid: 19924c417bb26844a8ea8eaa38aaaa24, type: 3}
+  _playerPrefabLvl01: {fileID: 6984289546796467074, guid: cdb8ce470a4b4994c9d16a6b78641347, type: 3}
   _isLoadingGameplayScene: 0
 --- !u!114 &645413408
 MonoBehaviour:

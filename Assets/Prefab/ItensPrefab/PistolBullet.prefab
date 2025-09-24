@@ -85,6 +85,7 @@ GameObject:
   - component: {fileID: 7329613031406746691}
   - component: {fileID: 5560283644659259503}
   - component: {fileID: 7367850375192061131}
+  - component: {fileID: -6581468421514190558}
   m_Layer: 0
   m_Name: PistolBullet
   m_TagString: Bullet
@@ -223,3 +224,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fdfeafad734bf2a49855986d4fade78d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &-6581468421514190558
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6498772255146754113}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortKey: 2913785088
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours: []
+  ForceRemoteRenderTimeframe: 0

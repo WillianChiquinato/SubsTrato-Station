@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 982ec3615e96daf47a6b9c5171335ca2, type: 3}
   m_Name: Chip
   m_EditorClassIdentifier: 
+  id: 4
   itemType: 2
   itemName: ChipGerador
   itemIcon: {fileID: 21300000, guid: caafea9b767a77f4fa192821a33fee21, type: 3}

@@ -1,4 +1,5 @@
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,10 +14,21 @@ public class SelectSkins : MonoBehaviour
     [Header("Skin Selection")]
     public int skinIndex = 0;
     public GameObject[] skins;
+    private string[] skinNames = { "Cobaia", "Cientista Masculino", "Cientista Feminina", "Anão Zelador" };
     public Image ImageInteract;
     public Button NextButton;
     public Button PreviousButton;
     public Button ConfirmButton;
+
+    void Awake()
+    {
+        skins[skinIndex].SetActive(true);
+
+        for (int i = 1; i < skins.Length; i++)
+        {
+            skins[i].SetActive(false);
+        }
+    }
 
     void Start()
     {
@@ -35,6 +47,7 @@ public class SelectSkins : MonoBehaviour
     {
         //Fazer a animação rodar em 360 graus
         skins[skinIndex].transform.Rotate(Vector3.up * 40f * Time.deltaTime);
+        HUDSelected.transform.Find("SkinName").GetComponent<TextMeshProUGUI>().text = skinNames[skinIndex];
     }
 
     public void NextSkin()
@@ -61,7 +74,17 @@ public class SelectSkins : MonoBehaviour
 
     public void FinishedSkin()
     {
-        playerDetect.GetComponent<CharacterMultiplayer>().canMove = true;
+        // Salvar a skin selecionada
+        if (playerDetect)
+        {
+            CharacterMultiplayer character = playerDetect.GetComponent<CharacterMultiplayer>();
+            if (character != null)
+            {
+                character.selectedSkinIndex = skinIndex;
+                character.RpcUpdateSkin(skinIndex);
+                character.canMove = true;
+            }
+        }
         StartCoroutine(FadeCanvas(0f));
 
         Invoke(nameof(DisableHUD), 0.8f);

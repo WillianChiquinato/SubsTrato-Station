@@ -11,6 +11,8 @@ using TMPro;
 
 public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbacks
 {
+    public static GameManagerMultiplayer instance { get; private set; }
+
     public LevelLoaderAsync levelLoaderMenu;
     public LevelLoaderGame levelLoader;
 
@@ -39,7 +41,8 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
     [SerializeField] private int _gameplaySceneIndex = 2;
 
     [Header("Configurações de Gameplay")]
-    [SerializeField] private NetworkObject _playerPrefab;
+    public NetworkObject _playerPrefab;
+    public NetworkObject _playerPrefabLvl01;
     private int _minPlayersToStartGame = 1;
 
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
@@ -156,6 +159,21 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         }
     }
 
+    public void RequestButtonReady()
+    {
+        if (GetSceneInfo() == SceneRef.FromIndex(1).ToString())
+        {
+            if (readyButton != null)
+            {
+                readyButton = GameObject.FindGameObjectWithTag("BtnReady").GetComponent<Button>();
+            }
+            else
+            {
+                readyButton = GameObject.FindGameObjectWithTag("BtnReady").GetComponent<Button>();
+            }
+        }
+    }
+
     public override void FixedUpdateNetwork()
     {
         if (Runner == null) return;
@@ -164,12 +182,16 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         if (GetSceneInfo() == SceneRef.FromIndex(1).ToString())
         {
             roomCountPlayers = GameObject.Find("TextoConnect")?.GetComponent<TextMeshProUGUI>();
-            readyButton = GameObject.FindGameObjectWithTag("BtnReady").GetComponent<Button>();
+            InvokeRepeating(nameof(RequestButtonReady), 2f, 1f);
             levelLoader = FindFirstObjectByType<LevelLoaderGame>();
 
-            if (Runner.IsSceneAuthority)
+            roomCountPlayers.text = $"{Runner.ActivePlayers.Count()} / 4";
+
+            if (readyButton != null)
             {
-                roomCountPlayers.text = $"{Runner.ActivePlayers.Count()} / 4";
+                readyButton.onClick.RemoveAllListeners();
+                readyButton.onClick.AddListener(IsplayerReadying);
+                Debug.Log("Botão Ready configurado.");
             }
         }
     }
@@ -178,20 +200,13 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
     {
         isPlayerReadying = true;
         _playersReady[Runner.LocalPlayer] = true;
-
         Debug.Log($"Jogador {Runner.LocalPlayer} está pronto.");
 
-        if (readyButton != null)
-        {
-            readyButton.interactable = false;
-        }
-        
         if (Runner.IsSceneAuthority)
         {
             Debug.Log($"Jogador {Runner.LocalPlayer} marcou como pronto. Total prontos: {_playersReady.Count}/{Runner.ActivePlayers.Count()}");
             // Verifica se todos estão prontos
-            if (_playersReady.Count >= _minPlayersToStartGame &&
-                _playersReady.Count == Runner.ActivePlayers.Count())
+            if (_playersReady.Count >= _minPlayersToStartGame)
             {
                 if (!_isLoadingGameplayScene)
                 {
@@ -209,16 +224,19 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         Debug.Log($"Jogador {player} entrou. Cena atual: {GetSceneInfo()}");
         if (runner.IsServer)
         {
-            if (_playerPrefab != null)
+            if (GetSceneInfo() == SceneRef.FromIndex(_lobbySceneIndex).ToString())
             {
-                Vector3 spawnPosition = new Vector3(0.16f, 0.8f, -10f);
-                NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
-                _spawnedCharacters[player] = networkPlayerObject;
-                Debug.Log($"Prefab do jogador spawnado para {player} na cena {GetSceneInfo()}.");
-            }
-            else
-            {
-                Debug.LogError("Player Prefab não atribuído.");
+                if (_playerPrefab != null)
+                {
+                    Vector3 spawnPosition = new Vector3(0.16f, 0.8f, -10f);
+                    NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
+                    _spawnedCharacters[player] = networkPlayerObject;
+                    Debug.Log($"Prefab do jogador spawnado para {player} na cena {GetSceneInfo()}.");
+                }
+                else
+                {
+                    Debug.LogError("Player Prefab não atribuído.");
+                }
             }
         }
     }
@@ -239,31 +257,53 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
     public void OnSceneLoadDone(NetworkRunner runner)
     {
         Scene currentScene = SceneManager.GetActiveScene();
-        SceneRef currentSceneRef = SceneRef.FromIndex(currentScene.buildIndex);
-        Debug.Log($"OnSceneLoadDone: Cena {GetSceneInfo()} carregada.");
+        var currentSceneRef = SceneRef.FromIndex(currentScene.buildIndex);
+        Debug.Log($"OnSceneLoadDone: Cena {currentSceneRef} carregada.");
 
+        //Se for a cena de gameplay, spawna aqui.
+        if (runner.IsServer && currentSceneRef == SceneRef.FromIndex(_gameplaySceneIndex))
+        {
+            foreach (var player in runner.ActivePlayers)
+            {
+                Vector3 spawnPos = new Vector3(-16.4f, 1f, 8.04f);
+                var obj = runner.Spawn(_playerPrefabLvl01, spawnPos,
+                                       Quaternion.identity, player);
+                _spawnedCharacters[player] = obj;
+                _spawnedCharacters[player].GetComponent<Animator>().SetBool("StartGame", true);
+                Debug.Log($"Prefab do Level01 spawnado para {player}");
+            }
+        }
+
+        //Configuração de UI do lobby continua igual.
         if (currentSceneRef == SceneRef.FromIndex(_lobbySceneIndex))
         {
             if (readyButton != null)
             {
-                readyButton.onClick.RemoveAllListeners(); // evita múltiplos registros
+                readyButton.onClick.RemoveAllListeners();
                 readyButton.onClick.AddListener(IsplayerReadying);
             }
         }
     }
-
 
     public void OnInput(NetworkRunner runner, NetworkInput input)
     {
         var data = new NetworkInputData();
 
         data.moveInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        data.moveInputLvl01 = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
         data.jumpPressed = Input.GetKey(KeyCode.Space);
         data.attackPressed = Input.GetMouseButton(0);
+        data.prepareArremessoPressed = Input.GetMouseButton(1);
+        data.useItemPressed = Input.GetMouseButtonDown(0);
+        data.aimActive = Input.GetMouseButtonDown(1);
+        data.interactPressed = Input.GetKeyDown(KeyCode.E);
+        data.stealthPressed = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+        data.dropItemPressed = Input.GetKeyDown(KeyCode.Q);
+        data.arremessarPressed = Input.GetMouseButtonUp(1);
 
         input.Set(data);
     }
-    
+
     public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) { }
     public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) { Debug.Log($"Runner Shutdown: {shutdownReason}"); }
     public void OnConnectedToServer(NetworkRunner runner) { Debug.Log("Connected to server."); }
@@ -284,6 +324,15 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
 public struct NetworkInputData : INetworkInput
 {
     public Vector2 moveInput;
+    public Vector2 moveInputLvl01;
     public bool jumpPressed;
     public bool attackPressed;
+    public bool aimActive;
+    public bool interactPressed;
+    public bool stealthPressed;
+    public bool dropItemPressed;
+    public bool useItemPressed;
+
+    public bool prepareArremessoPressed;
+    public bool arremessarPressed;
 }

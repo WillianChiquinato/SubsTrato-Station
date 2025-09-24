@@ -86,6 +86,7 @@ GameObject:
   - component: {fileID: 5560283644659259503}
   - component: {fileID: 7367850375192061131}
   - component: {fileID: 7387156302540328112}
+  - component: {fileID: -936038882351838212}
   m_Layer: 0
   m_Name: ShotGunBullet
   m_TagString: Bullet
@@ -239,3 +240,21 @@ MonoBehaviour:
   knockbackForce: 90
   damage: 70
   hasHit: 0
+--- !u!114 &-936038882351838212
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6498772255146754113}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortKey: 2010633472
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours: []
+  ForceRemoteRenderTimeframe: 0

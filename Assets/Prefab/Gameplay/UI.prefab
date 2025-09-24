@@ -88,6 +88,7 @@ GameObject:
   - component: {fileID: 4450910014101860580}
   - component: {fileID: 3214230398792592492}
   - component: {fileID: 102620037020042936}
+  - component: {fileID: 9028706183531855984}
   m_Layer: 5
   m_Name: UI
   m_TagString: Untagged
@@ -144,7 +145,7 @@ Canvas:
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
-  m_VertexColorAlwaysGammaSpace: 0
+  m_VertexColorAlwaysGammaSpace: 1
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
@@ -190,6 +191,37 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &9028706183531855984
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 198536284969011574}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80e16324cd4b3c04c8c15e8fde704246, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  player: {fileID: 0}
+  DeathUI: {fileID: 7192001146132909957}
+  PickUpItemUI: {fileID: 3488218836652623585}
+  SlotHighlight: {fileID: 7942884283811450830}
+  slotsPositions:
+  - {fileID: 6274598968552622112}
+  - {fileID: 1388228864293595399}
+  - {fileID: 1996537509357796093}
+  - {fileID: 8778341149210197622}
+  - {fileID: 4136265501058177443}
+  - {fileID: 4362241697606297114}
+  slotIcons:
+  - {fileID: 3917692743864036296}
+  - {fileID: 4866122174664009220}
+  - {fileID: 2387656456234115550}
+  - {fileID: 2629949588731752350}
+  - {fileID: 927619959932718512}
+  - {fileID: 8495178288722353329}
+  AmmoSlot: {fileID: 8084944927964072704}
 --- !u!1 &541317918346440657
 GameObject:
   m_ObjectHideFlags: 0
@@ -429,7 +461,7 @@ GameObject:
   - component: {fileID: 1704548442639594861}
   - component: {fileID: 613043746736313410}
   m_Layer: 5
-  m_Name: HotBarBackground
+  m_Name: HotBar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 982ec3615e96daf47a6b9c5171335ca2, type: 3}
   m_Name: ArmaPistola 1
   m_EditorClassIdentifier: 
+  id: 2
   itemType: 0
   itemName: Pistola
   itemIcon: {fileID: 21300000, guid: 8ac16f2862095e84dbfd347e418c9b04, type: 3}

@@ -10,13 +10,13 @@ public class CharacterMultiplayer : NetworkBehaviour
     [Header("Movement")]
     public float moveSpeed;
     private Vector3 moveDirection;
-    private float horizontalInput;
-    private float verticalInput;
 
     public CharacterController character;
     public CapsuleCollider capsuleColliderCharacter;
     public Animator animator;
     public bool isMoving;
+
+    public int selectedSkinIndex = 0;
 
     [Header("Gravidade player")]
     public Vector3 velocity;
@@ -59,6 +59,8 @@ public class CharacterMultiplayer : NetworkBehaviour
     public override void FixedUpdateNetwork()
     {
         if (!GetInput(out NetworkInputData inputData)) return;
+        if (!Object.HasStateAuthority) return;
+        if (character == null) return;
 
         isGrounded = character.isGrounded;
         animator.SetBool("IsGround", isGrounded);
@@ -91,22 +93,22 @@ public class CharacterMultiplayer : NetworkBehaviour
         {
             HandleMovement(inputData);
             HandleRotation(inputData);
+
+            HandleAnimations(inputData);
+            HandleAttack(inputData);
+
+            // Jump
+            if (isGrounded && inputData.jumpPressed)
+            {
+                Jump();
+            }
+
+            // Gravidade
+            if (isGrounded && velocity.y < 0)
+                velocity.y = -2f;
+
+            velocity.y += gravity * Runner.DeltaTime;
         }
-
-        HandleAnimations(inputData);
-        HandleAttack(inputData);
-
-        // Jump
-        if (isGrounded && inputData.jumpPressed)
-        {
-            Jump();
-        }
-
-        // Gravidade
-        if (isGrounded && velocity.y < 0)
-            velocity.y = -2f;
-
-        velocity.y += gravity * Runner.DeltaTime;
     }
 
     void OnAnimatorMove()
@@ -234,6 +236,25 @@ public class CharacterMultiplayer : NetworkBehaviour
     {
         animator.applyRootMotion = false;
         canMove = true;
+    }
+
+    public void RpcUpdateSkin(int skinIndex)
+    {
+        selectedSkinIndex = skinIndex;
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            Transform child = transform.GetChild(i);
+            if (child.name.StartsWith("Skin"))
+            {
+                child.gameObject.SetActive(false);
+            }
+        }
+
+        Transform selectedSkin = transform.Find("Skin" + (skinIndex + 1));
+        if (selectedSkin != null)
+        {
+            selectedSkin.gameObject.SetActive(true);
+        }
     }
 }
 

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Linq;
 using Fusion;
 using TMPro;
@@ -7,6 +6,8 @@ using UnityEngine.UI;
 
 public class PlayerInventory : MonoBehaviour
 {
+    public NetworkObject networkObject;
+
     public ItemDatabase itemDatabase;
     public PlayerMoviment player;
 
@@ -27,27 +28,29 @@ public class PlayerInventory : MonoBehaviour
     [Header("UI")]
     public GameObject AmmoSlot;
 
-    void Awake()
+    void Start()
     {
         ItemDatabase.LoadInstance(itemDatabase);
         player = GetComponent<PlayerMoviment>();
-        AmmoSlot.SetActive(false);
-    }
+        networkObject = GetComponent<NetworkObject>();
 
-    void Start()
-    {
-        UpdateHotbarUI();
+        //References UI.
+        var ui = UIreferences.Instance;
+        slotHighlight = ui.SlotHighlight;
+        slotPositions = ui.slotsPositions;
+        slotIcons = ui.slotIcons;
+        AmmoSlot = ui.AmmoSlot;
+        AmmoSlot.SetActive(false);
         slotHighlight.gameObject.SetActive(false);
+
+        IconeUpdate();
     }
 
     void Update()
     {
+        if (!player.networkObject.HasInputAuthority) return;
         float scroll = Input.GetAxis("Mouse ScrollWheel");
-
-        if (player.aimAnimActive)
-        {
-            return;
-        }
+        if (player.aimAnimActive) return;
 
         if (scroll > 0f)
         {
@@ -72,6 +75,8 @@ public class PlayerInventory : MonoBehaviour
 
     public void UpdateHotbarUI()
     {
+        if (!player.networkObject.HasInputAuthority) return;
+
         if (selectedSlot < 0f)
         {
             slotHighlight.gameObject.SetActive(false);
@@ -82,18 +87,7 @@ public class PlayerInventory : MonoBehaviour
             slotHighlight.gameObject.SetActive(true);
         }
 
-        for (int i = 0; i < totalSlots; i++)
-        {
-            if (hotbarItems[i] != null)
-            {
-                slotIcons[i].sprite = hotbarItems[i].itemIcon;
-                slotIcons[i].enabled = true;
-            }
-            else
-            {
-                slotIcons[i].enabled = false;
-            }
-        }
+        IconeUpdate();
 
         if (!justDroppedItem)
         {
@@ -108,13 +102,36 @@ public class PlayerInventory : MonoBehaviour
         Debug.Log("Item selecionado: " + hotbarItems[selectedSlot]?.itemName);
     }
 
+    public void IconeUpdate()
+    {
+        for (int i = 0; i < totalSlots; i++)
+        {
+            if (hotbarItems[i] != null)
+            {
+                slotIcons[i].sprite = hotbarItems[i].itemIcon;
+                slotIcons[i].enabled = true;
+            }
+            else
+            {
+                slotIcons[i].enabled = false;
+            }
+        }
+    }
+
 
     void EquipSelectedItem()
     {
         // Destroi o item antigo da mão, se houver
         if (myHandItem != null)
         {
-            Destroy(myHandItem);
+            if (myHandItem.TryGetComponent<NetworkObject>(out var netObj))
+            {
+                networkObject.Runner.Despawn(netObj);
+            }
+            else
+            {
+                Destroy(myHandItem);
+            }
         }
 
         ItemSO selectedItem = hotbarItems[selectedSlot];
@@ -124,49 +141,51 @@ public class PlayerInventory : MonoBehaviour
             GameObject prefab = ItemDatabase.GetPrefabForItem(selectedItem);
             if (prefab != null)
             {
-                GameObject newItem = Instantiate(prefab, pickUpParent);
-                Rigidbody rb = newItem.GetComponent<Rigidbody>();
-                if (rb != null)
+                if (player.networkObject.HasStateAuthority)
                 {
-                    Destroy(rb);
-                }
-                newItem.transform.localPosition = Vector3.zero;
-                newItem.transform.localRotation = Quaternion.identity;
-
-                if (newItem.TryGetComponent<Weapon>(out var weapon))
-                {
-                    newItem.transform.localPosition += weapon.Offset;
-                    newItem.transform.localRotation = weapon.OffsetRotation;
-                }
-
-                myHandItem = newItem;
-
-                if (myHandItem.TryGetComponent<Weapon>(out var gun))
-                {
-                    var itemInDB = itemDatabase.items.FirstOrDefault(x => x.itemSO == selectedItem);
-                    if (itemInDB != null)
+                    NetworkObject newItemNet = networkObject.Runner.Spawn(prefab, pickUpParent.position, pickUpParent.rotation, player.networkObject.InputAuthority);
+                    newItemNet.transform.SetParent(pickUpParent);
+                    Rigidbody rb = newItemNet.GetComponent<Rigidbody>();
+                    if (rb != null)
                     {
-                        gun.inventory = this;
-                        gun.Type = itemInDB.type;
-                        gun.MaxAmmo = itemInDB.MaxAmmo;
-                        gun.CurrentAmmo = itemInDB.CurrentAmmo;
+                        Destroy(rb);
+                    }
 
-                        if (!gun.GetComponent<ItemArremessavel>())
+                    if (newItemNet.TryGetComponent<Weapon>(out var weapon))
+                    {
+                        newItemNet.transform.localPosition += weapon.Offset;
+                        newItemNet.transform.localRotation = weapon.OffsetRotation;
+                    }
+
+                    myHandItem = newItemNet.gameObject;
+
+                    if (myHandItem.TryGetComponent<Weapon>(out var gun))
+                    {
+                        var itemInDB = itemDatabase.items.FirstOrDefault(x => x.itemSO == selectedItem);
+                        if (itemInDB != null)
                         {
-                            AmmoSlot.SetActive(true);
-                            AmmoSlot.GetComponentInChildren<TextMeshProUGUI>()
-                                .text = gun.CurrentAmmo + " / " + gun.MaxAmmo;
-                        }
-                        else
-                        {
-                            AmmoSlot.SetActive(true);
-                            AmmoSlot.GetComponentInChildren<TextMeshProUGUI>()
-                                .text = "<Arremessar>";
+                            gun.inventory = this;
+                            gun.Type = itemInDB.type;
+                            gun.MaxAmmo = itemInDB.MaxAmmo;
+                            gun.CurrentAmmo = itemInDB.CurrentAmmo;
+
+                            if (!gun.GetComponent<ItemArremessavel>())
+                            {
+                                AmmoSlot.SetActive(true);
+                                AmmoSlot.GetComponentInChildren<TextMeshProUGUI>()
+                                    .text = gun.CurrentAmmo + " / " + gun.MaxAmmo;
+                            }
+                            else
+                            {
+                                AmmoSlot.SetActive(true);
+                                AmmoSlot.GetComponentInChildren<TextMeshProUGUI>()
+                                    .text = "<Arremessar>";
+                            }
                         }
                     }
-                }
 
-                Debug.Log("Equipado item na mão: " + selectedItem.itemName);
+                    Debug.Log("Equipado item na mão: " + selectedItem.itemName);
+                }
             }
             else
             {
@@ -194,6 +213,4 @@ public class PlayerInventory : MonoBehaviour
         Debug.Log("Hotbar cheia! Não foi possível adicionar: " + newItem.itemName);
         return false;
     }
-
-
 }

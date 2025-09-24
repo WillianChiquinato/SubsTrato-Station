@@ -16,6 +16,8 @@ GameObject:
   - component: {fileID: 7135017438388372430}
   - component: {fileID: 9216925130911435114}
   - component: {fileID: 8934687094396689169}
+  - component: {fileID: -7592963735326142730}
+  - component: {fileID: -3987982360002832800}
   m_Layer: 6
   m_Name: Peixe - Food
   m_TagString: Untagged
@@ -33,7 +35,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0.7069834, y: 0, z: 0, w: 0.7072302}
   m_LocalPosition: {x: -1.72, y: 1.03, z: 2.93}
-  m_LocalScale: {x: 20, y: 20, z: 20}
+  m_LocalScale: {x: 10, y: 10, z: 10}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 4995128658480309016}
@@ -204,6 +206,42 @@ MonoBehaviour:
   itemSO: {fileID: 11400000, guid: 4a601781c79091c4aa663e6c28d7f94c, type: 2}
   projectilePrefab: {fileID: 0}
   projectileSpeed: 0
+--- !u!114 &-7592963735326142730
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6866001779989561456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortKey: 1348300091
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: -3987982360002832800}
+  ForceRemoteRenderTimeframe: 0
+--- !u!114 &-3987982360002832800
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6866001779989561456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 158639473, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _stateAuthorityChangeErrorCorrectionDelta: 0
+  SyncScale: 0
+  SyncParent: 1
+  _autoAOIOverride: 1
+  DisableSharedModeInterpolation: 0
 --- !u!1 &8796703483754367071
 GameObject:
   m_ObjectHideFlags: 0

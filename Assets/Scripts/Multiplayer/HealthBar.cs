@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,9 +10,17 @@ public class HealthBar : MonoBehaviour
 
     void Start()
     {
-        health = GameObject.FindFirstObjectByType<PlayerMoviment>().GetComponent<Health>();
-
+        StartCoroutine(DelayConnectedBars());
         slider = GetComponentInChildren<Slider>();
+    }
+
+    IEnumerator DelayConnectedBars()
+    {
+        yield return new WaitForSeconds(1f);
+        var ui = UIreferences.Instance;
+        health = ui.player.GetComponent<Health>();
+
+        slider.maxValue = maxHealth;
         health.health = this.maxHealth;
     }
 
