@@ -564,6 +564,7 @@ public class PlayerMoviment : NetworkBehaviour
         {
             rb.position = spawnPos;
             rb.AddForce(playerCameraTransform.transform.forward * 5f + playerCameraTransform.up * 4f, ForceMode.Impulse);
+            rb.angularVelocity = Random.insideUnitSphere * 15f;
         }
 
         RPC_ClearInventory();

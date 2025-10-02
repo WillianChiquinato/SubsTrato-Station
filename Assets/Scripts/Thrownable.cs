@@ -112,32 +112,58 @@ public class Thrownable : NetworkBehaviour
 
     private void ArremessarNoServidor()
     {
-        if (objetoArremessavelPrefab != null)
+        if (playerMoviment.inventory.myHandItem != null)
         {
-            // USA A MESMA LÓGICA DO DROP QUE FUNCIONA!
-            if (playerMoviment.inventory.myHandItem != null)
+            ItemClass itemClass = playerMoviment.inventory.myHandItem.GetComponent<ItemClass>();
+            if (itemClass != null)
             {
-                ItemClass itemClass = playerMoviment.inventory.myHandItem.GetComponent<ItemClass>();
-                if (itemClass != null)
+                GameObject dropPrefab = ItemDatabase.GetPrefabForItem(itemClass.itemSO);
+                if (dropPrefab == null)
                 {
-                    // USA O MESMO PREFAB DO DROP QUE FUNCIONA!
-                    GameObject dropPrefab = ItemDatabase.GetPrefabForItem(itemClass.itemSO);
-
-                    Vector3 spawnPos = playerMoviment.playerCameraTransform.position + playerMoviment.playerCameraTransform.forward * 1.5f + Vector3.up * 0.5f;
-                    var thrownObject = Runner.Spawn(dropPrefab, spawnPos, Quaternion.identity, Object.InputAuthority);
-
-                    Debug.LogError("Item " + spawnPos + ", " + thrownObject.transform.position);
-
-                    if (thrownObject.TryGetComponent<Rigidbody>(out var rb))
-                    {
-                        Vector3 direcaoMira = GetDirecaoMira();
-                        rb.AddForce(direcaoMira * forcaAtual, ForceMode.Impulse);
-                    }
-
-                    RPC_RemoverItemDoInventario();
+                    Debug.LogError("Prefab não encontrado!");
+                    return;
                 }
+
+                // Calcula posição e direção
+                Vector3 spawnPos = GetSpawnPosition();
+
+                Vector3 direcaoMira = GetDirecaoMira();
+                Vector3 velocity = direcaoMira * forcaAtual;
+                Vector3 angularVelocity = Random.insideUnitSphere * 7f;
+
+                Debug.Log($"Spawnando em: {spawnPos}");
+
+                // Spawn simples primeiro
+                var thrownObject = Runner.Spawn(
+                    dropPrefab,
+                    spawnPos,
+                    Quaternion.identity,
+                    Object.InputAuthority
+                );
+
+                // Aplica física IMEDIATAMENTE após spawn
+                if (thrownObject.TryGetComponent<Rigidbody>(out var rb))
+                {
+                    // Configuração imediata da física
+                    rb.position = spawnPos;
+                    rb.linearVelocity = velocity;
+                    rb.angularVelocity = angularVelocity;
+                }
+
+                // Chama RPC para sincronizar estado inicial
+                if (thrownObject.TryGetComponent<ItemArremessavel>(out var item))
+                {
+                    item.Rpc_SetInitialState(spawnPos, Quaternion.identity, velocity, angularVelocity);
+                }
+
+                RPC_RemoverItemDoInventario();
             }
         }
+    }
+
+    private Vector3 GetSpawnPosition()
+    {
+        return spawnPoint.position;
     }
 
     private Vector3 GetDirecaoMira()
