@@ -8,42 +8,60 @@ public class SimonGame : MonoBehaviour
     public List<CircleButton> circles;
     public float showDelay = 0.7f;
     public int totalTurns = 8;
+    public GameObject PilarBtn;
 
-    private List<int> sequence = new List<int>();
+    private List<int> Sequence = new List<int>();
     private int currentIndex = 0;
     private int currentTurn = 0;
     private bool playerTurn = false;
     private bool isShowingSequence = false;
+    private bool canClick = true;
+
+    public int victoryIndex = 0;
 
     void Start()
     {
-        StartCoroutine(StartRound());
+        for (int i = 0; i < circles.Count; i++)
+        {
+            Debug.Log($"Círculo {i}: {circles[i].name}");
+        }
     }
 
-    IEnumerator StartRound()
+    public IEnumerator StartRound()
     {
         playerTurn = false;
         isShowingSequence = true;
+        ToastMessage.Instance.ShowToast("Observe a sequência!", ToastType.Alert);
 
         if (currentTurn >= totalTurns)
         {
             Debug.Log("🏆 Você completou todas as 8 rodadas! Vitória!");
+            //Mostra uma cor entre elas e guarda em uma variavel esse index.
+            ToastMessage.Instance.ShowToast("Você completou todas as rodadas! Vitória!", ToastType.Success);
+            PilarBtn.GetComponent<PilarButtonSimon>().simonPilarReset = true;
+            Sequence.Clear();
+            currentTurn = 0;
+            playerTurn = false;
+            isShowingSequence = false;
+
+            victoryIndex = Random.Range(0, circles.Count);
+            circles[victoryIndex].Highlight();
             yield break;
         }
 
         yield return new WaitForSeconds(1f);
 
         // Adiciona novo item à sequência
-        sequence.Add(Random.Range(0, circles.Count));
+        Sequence.Add(Random.Range(0, circles.Count));
         currentTurn++;
         Debug.Log($"▶️ Turno {currentTurn}/{totalTurns}");
 
         // Mostra a sequência
-        for (int i = 0; i < sequence.Count; i++)
+        for (int i = 0; i < Sequence.Count; i++)
         {
-            circles[sequence[i]].Highlight();
+            circles[Sequence[i]].Highlight();
             yield return new WaitForSeconds(showDelay);
-            circles[sequence[i]].Unhighlight();
+            circles[Sequence[i]].Unhighlight();
             yield return new WaitForSeconds(0.2f);
         }
 
@@ -55,6 +73,10 @@ public class SimonGame : MonoBehaviour
     public void OnCirclePressed(CircleButton circle)
     {
         if (!playerTurn || isShowingSequence) return;
+        if (!canClick) return;
+
+        canClick = false;
+        StartCoroutine(EnableClickDelay());
 
         int pressedIndex = circles.IndexOf(circle);
 
@@ -62,15 +84,16 @@ public class SimonGame : MonoBehaviour
         StartCoroutine(FlashPressed(circle));
 
         // Verifica se acertou
-        if (pressedIndex == sequence[currentIndex])
+        if (pressedIndex == Sequence[currentIndex])
         {
             currentIndex++;
 
             // ✅ Se acertou toda a sequência, passa de turno
-            if (currentIndex >= sequence.Count)
+            if (currentIndex >= Sequence.Count)
             {
                 playerTurn = false;
                 StartCoroutine(StartRound());
+                ToastMessage.Instance.ShowToast("Acertou a sequência, continua!", ToastType.Success);
             }
         }
         else
@@ -79,10 +102,17 @@ public class SimonGame : MonoBehaviour
             Debug.Log($"Errou na posição {currentIndex + 1}! Reiniciando...");
             playerTurn = false;
             isShowingSequence = false;
-            sequence.Clear();
+            Sequence.Clear();
             currentTurn = 0;
-            StartCoroutine(RestartAfterDelay());
+            PilarBtn.GetComponent<PilarButtonSimon>().simonPilarReset = false;
+            ToastMessage.Instance.ShowToast("Errou a sequência, resetando...", ToastType.Error);
         }
+    }
+
+    private IEnumerator EnableClickDelay()
+    {
+        yield return new WaitForSeconds(0.25f);
+        canClick = true;
     }
 
     IEnumerator FlashPressed(CircleButton circle)
@@ -90,11 +120,5 @@ public class SimonGame : MonoBehaviour
         circle.Highlight();
         yield return new WaitForSeconds(0.2f);
         circle.Unhighlight();
-    }
-
-    IEnumerator RestartAfterDelay()
-    {
-        yield return new WaitForSeconds(1f);
-        StartCoroutine(StartRound());
     }
 }

@@ -493,15 +493,16 @@ public class PlayerMoviment : NetworkBehaviour
                 ItemFlutuante.transform.SetParent(null);
                 pickUpUI.SetActive(false);
             }
-            else if (hit.collider.GetComponent<leversChildren>() || hit.collider.GetComponent<CircleButton>())
+            else if (hit.collider.GetComponent<leversChildren>() || hit.collider.GetComponent<CircleButton>() || hit.collider.GetComponent<PilarButtonSimon>())
             {
                 pickUpUI.SetActive(false);
+                if (!networkObject.HasInputAuthority)
+                {
+                    return;
+                }
 
                 IUsable usable = hit.collider.GetComponent<IUsable>();
-                if (usable != null)
-                {
-                    usable.Use(this.gameObject);
-                }
+                usable?.Use(this.gameObject);
             }
         }
     }

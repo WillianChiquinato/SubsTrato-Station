@@ -9,6 +9,7 @@ public class InitialQuestSystem : MonoBehaviour
 
     public List<levers> leversList = new List<levers>();
     public List<CircleTrain> CircleTrainList = new List<CircleTrain>();
+    public List<PilarButtonSimon> pilarButtonSimons = new List<PilarButtonSimon>();
     public int CurrentLeverCount = 0;
     public bool InitialQuestStarted = false;
 
@@ -35,6 +36,7 @@ public class InitialQuestSystem : MonoBehaviour
         //Adicionar todos os levers do mapa nessa lista.
         leversList.AddRange(FindObjectsByType<levers>(FindObjectsSortMode.None));
         CircleTrainList.AddRange(FindObjectsByType<CircleTrain>(FindObjectsSortMode.None));
+        pilarButtonSimons.AddRange(FindObjectsByType<PilarButtonSimon>(FindObjectsSortMode.None));
 
         var ui = UIreferences.Instance;
         timerObjectUI = ui.TimingBar;
@@ -67,6 +69,12 @@ public class InitialQuestSystem : MonoBehaviour
             item.isMoving = true;
         }
 
+        foreach (PilarButtonSimon item in pilarButtonSimons)
+        {
+            item.simonPilarReset = false;
+        }
+
+        ToastMessage.Instance.ShowToast("Mecânicas desbloqueadas!!", ToastType.Success);
         Debug.LogWarning("Initial Quest Started");
     }
 
