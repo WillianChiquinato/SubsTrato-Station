@@ -16,6 +16,7 @@ public class UIreferences : MonoBehaviour
     public RectTransform[] slotsPositions;
     public Image[] slotIcons;
     public GameObject AmmoSlot;
+    public GameObject TimingBar;
 
     private void Awake()
     {

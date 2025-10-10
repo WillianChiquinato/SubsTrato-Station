@@ -263,14 +263,38 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         //Se for a cena de gameplay, spawna aqui.
         if (runner.IsServer && currentSceneRef == SceneRef.FromIndex(_gameplaySceneIndex))
         {
+            List<Vector3> spawnPoints = new List<Vector3>()
+            {
+                new Vector3(-16.4f, 1f, 8.04f),
+                // new Vector3(-0.925f, 1f, 21.662f),
+                // new Vector3(13.03f, 1f, 18f),
+                // new Vector3(16.38f, 1f, 5.9f)
+            };
+
+            // Embaralha a lista de spawnPoints
+            for (int i = 0; i < spawnPoints.Count; i++)
+            {
+                int rand = UnityEngine.Random.Range(i, spawnPoints.Count);
+                (spawnPoints[i], spawnPoints[rand]) = (spawnPoints[rand], spawnPoints[i]);
+            }
+
+            int index = 0;
             foreach (var player in runner.ActivePlayers)
             {
-                Vector3 spawnPos = new Vector3(-16.4f, 1f, 8.04f);
+                if (index >= spawnPoints.Count)
+                {
+                    Debug.LogWarning("Mais jogadores que spawns disponíveis!");
+                    break;
+                }
+
+                Vector3 spawnPos = spawnPoints[index];
                 var obj = runner.Spawn(_playerPrefabLvl01, spawnPos,
                                        Quaternion.identity, player);
                 _spawnedCharacters[player] = obj;
                 _spawnedCharacters[player].GetComponent<Animator>().SetBool("StartGame", true);
-                Debug.Log($"Prefab do Level01 spawnado para {player}");
+                Debug.Log($"Prefab do Level01 spawnado para {player} na posição {spawnPos}");
+
+                index++;
             }
         }
 
