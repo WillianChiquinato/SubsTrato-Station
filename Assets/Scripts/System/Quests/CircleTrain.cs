@@ -6,6 +6,7 @@ public class CircleTrain : MonoBehaviour
 {
     [Header("Círculos (ordem do 1 ao 6)")]
     public List<Transform> circles;
+    public GameObject[] DoorInitialGame;
 
     [Header("Intervalo de movimento (segundos)")]
     private float moveInterval = 2.6f;
@@ -14,6 +15,8 @@ public class CircleTrain : MonoBehaviour
     private bool hasStarted = false;
 
     private List<Vector3> targetPositions;
+    public bool OpenDooerIndex = false;
+    public int doorIndex = 0;
 
     void Start()
     {
@@ -39,6 +42,14 @@ public class CircleTrain : MonoBehaviour
             {
                 moveInterval -= 0.2f;
                 timingCrescing = 0f;
+            }
+        }
+
+        foreach (var item in circles)
+        {
+            if (item.GetComponent<PushDoor>() != null)
+            {
+                item.GetComponent<PushDoor>().door = DoorInitialGame;
             }
         }
     }

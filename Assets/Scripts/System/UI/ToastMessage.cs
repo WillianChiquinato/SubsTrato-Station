@@ -20,4 +20,13 @@ public class ToastMessage : MonoBehaviour
 
         activeToast.Show(message, type);
     }
+
+    public void RemoveAllToast()
+    {
+        if (Instance.activeToast != null)
+        {
+            Destroy(Instance.activeToast.gameObject);
+            Instance.activeToast = null;
+        }
+    }
 }

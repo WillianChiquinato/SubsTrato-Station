@@ -6,6 +6,7 @@ public class SimonGame : MonoBehaviour
 {
     [Header("Círculos em ordem")]
     public List<CircleButton> circles;
+    public CircleTrain[] circleTrain;
     public float showDelay = 0.7f;
     public int totalTurns = 8;
     public GameObject PilarBtn;
@@ -36,20 +37,12 @@ public class SimonGame : MonoBehaviour
         if (currentTurn >= totalTurns)
         {
             Debug.Log("🏆 Você completou todas as 8 rodadas! Vitória!");
-            //Mostra uma cor entre elas e guarda em uma variavel esse index.
-            ToastMessage.Instance.ShowToast("Você completou todas as rodadas! Vitória!", ToastType.Success);
-            PilarBtn.GetComponent<PilarButtonSimon>().simonPilarReset = true;
-            Sequence.Clear();
-            currentTurn = 0;
-            playerTurn = false;
-            isShowingSequence = false;
-
-            victoryIndex = Random.Range(0, circles.Count);
-            circles[victoryIndex].Highlight();
+            ToastMessage.Instance.RemoveAllToast();
+            StartCoroutine(ShowVictoryMessage());
             yield break;
         }
 
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(1.5f);
 
         // Adiciona novo item à sequência
         Sequence.Add(Random.Range(0, circles.Count));
@@ -120,5 +113,35 @@ public class SimonGame : MonoBehaviour
         circle.Highlight();
         yield return new WaitForSeconds(0.2f);
         circle.Unhighlight();
+    }
+
+    IEnumerator ShowVictoryMessage()
+    {
+        yield return new WaitForSeconds(1.5f);
+
+        ToastMessage.Instance.ShowToast("Você completou todas as rodadas! Vitória!", ToastType.Success);
+        PilarBtn.GetComponent<PilarButtonSimon>().simonPilarReset = true;
+        Sequence.Clear();
+        currentTurn = 0;
+        playerTurn = false;
+        isShowingSequence = false;
+
+        victoryIndex = Random.Range(0, circles.Count);
+        circles[victoryIndex].Highlight();
+        var hightLight = circles[victoryIndex].gameObject.GetComponent<HightLights>();
+
+        if (hightLight != null)
+        {
+            Destroy(hightLight);
+        }
+
+        foreach (var item in circleTrain)
+        {
+            item.doorIndex = victoryIndex;
+
+            var circleIndex = circles.IndexOf(circles[victoryIndex]);
+            item.circles[circleIndex].gameObject.AddComponent<PushDoor>();
+            item.circles[circleIndex].gameObject.AddComponent<MeshCollider>();
+        }
     }
 }
