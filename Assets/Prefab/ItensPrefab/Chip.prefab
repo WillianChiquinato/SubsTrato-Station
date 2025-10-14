@@ -102,6 +102,8 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  referenceHighlight:
+  - {fileID: 3869748778599804468}
 --- !u!114 &5573800547462175754
 MonoBehaviour:
   m_ObjectHideFlags: 0

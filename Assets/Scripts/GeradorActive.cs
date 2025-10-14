@@ -7,10 +7,10 @@ public class GeradorActive : MonoBehaviour
         if (other.CompareTag("Itens") && other.GetComponent<Rigidbody>() != null)
         {
             // Ativar o gerador.
-            GetComponentInParent<ChipSystem>().chipSystemCount++;
+            GetComponentInParent<OrbSpawner>().StartPuzzle();
             Destroy(other.gameObject);
 
-            ToastMessage.Instance.ShowToast("Chip ativado! { " + GetComponentInParent<ChipSystem>().chipSystemCount + " de 3}", ToastType.Success);
+            ToastMessage.Instance.ShowToast("Chip ativado! Pegue as Orbes!!!!", ToastType.Success);
         }
     }
 }

@@ -17,6 +17,8 @@ public class UIreferences : MonoBehaviour
     public Image[] slotIcons;
     public GameObject AmmoSlot;
     public GameObject TimingBar;
+    public GameObject OrbesCountUI;
+    public GameObject textObj;
 
     private void Awake()
     {

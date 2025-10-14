@@ -8,6 +8,7 @@ using System;
 using System.Linq;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections;
 
 public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbacks
 {
@@ -25,6 +26,9 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
 
     public TextMeshProUGUI roomCountPlayers;
     public Button readyButton;
+    public Button viewButtons;
+
+    public GameObject viewObjs;
     private Dictionary<PlayerRef, bool> _playersReady = new();
 
     private string GetSceneInfo()
@@ -166,10 +170,12 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
             if (readyButton != null)
             {
                 readyButton = GameObject.FindGameObjectWithTag("BtnReady").GetComponent<Button>();
+                viewButtons = GameObject.FindGameObjectWithTag("ViewButtons").GetComponent<Button>();
             }
             else
             {
                 readyButton = GameObject.FindGameObjectWithTag("BtnReady").GetComponent<Button>();
+                viewButtons = GameObject.FindGameObjectWithTag("ViewButtons").GetComponent<Button>();
             }
         }
     }
@@ -193,6 +199,13 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
                 readyButton.onClick.AddListener(IsplayerReadying);
                 Debug.Log("Botão Ready configurado.");
             }
+
+            if (viewButtons != null)
+            {
+                viewButtons.onClick.RemoveAllListeners();
+                viewButtons.onClick.AddListener(() => StartCoroutine(ViewButtonsInputs()));
+                Debug.Log("Botão View configurado.");
+            }
         }
     }
 
@@ -215,6 +228,37 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
                     levelLoader.Transicao(SceneRef.FromIndex(_gameplaySceneIndex), Runner);
                 }
             }
+        }
+    }
+
+    public IEnumerator ViewButtonsInputs()
+    {
+        if (viewObjs != null)
+        {
+            CanvasGroup canvasGroup = viewObjs.GetComponent<CanvasGroup>();
+            if (canvasGroup != null)
+            {
+                // Fade in
+                float duration = 0.5f;
+                float elapsed = 0f;
+                while (elapsed < duration)
+                {
+                    elapsed += Time.deltaTime;
+                    canvasGroup.alpha = Mathf.Clamp01(elapsed / duration);
+                    yield return null;
+                }
+                canvasGroup.alpha = 1f;
+                canvasGroup.interactable = true;
+                canvasGroup.blocksRaycasts = true;
+            }
+            else
+            {
+                Debug.LogWarning("CanvasGroup não encontrado em ViewObjs.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("ViewObjs não atribuído.");
         }
     }
 
@@ -260,15 +304,20 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         var currentSceneRef = SceneRef.FromIndex(currentScene.buildIndex);
         Debug.Log($"OnSceneLoadDone: Cena {currentSceneRef} carregada.");
 
+        if (runner.IsServer && currentSceneRef == SceneRef.FromIndex(_lobbySceneIndex))
+        {
+            runner.StartCoroutine(WaitAndDisableViewObjs());
+        }
+
         //Se for a cena de gameplay, spawna aqui.
         if (runner.IsServer && currentSceneRef == SceneRef.FromIndex(_gameplaySceneIndex))
         {
             List<Vector3> spawnPoints = new List<Vector3>()
             {
                 new Vector3(-16.4f, 1f, 8.04f),
-                // new Vector3(-0.925f, 1f, 21.662f),
-                // new Vector3(13.03f, 1f, 18f),
-                // new Vector3(16.38f, 1f, 5.9f)
+                new Vector3(-0.925f, 1f, 21.662f),
+                new Vector3(13.03f, 1f, 18f),
+                new Vector3(16.38f, 1f, 5.9f)
             };
 
             // Embaralha a lista de spawnPoints
@@ -309,6 +358,20 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         }
     }
 
+    private IEnumerator WaitAndDisableViewObjs()
+    {
+        yield return null;
+
+        GameObject obj = GameObject.Find("ViewObjs");
+        if (obj != null)
+        {
+            viewObjs = obj;
+            obj.GetComponent<CanvasGroup>().alpha = 0f;
+            obj.GetComponent<CanvasGroup>().interactable = false;
+            obj.GetComponent<CanvasGroup>().blocksRaycasts = false;
+        }
+    }
+
     public void OnInput(NetworkRunner runner, NetworkInput input)
     {
         var data = new NetworkInputData();
@@ -324,6 +387,7 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         data.stealthPressed = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
         data.dropItemPressed = Input.GetKeyDown(KeyCode.Q);
         data.arremessarPressed = Input.GetMouseButtonUp(1);
+        data.runningPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 
         input.Set(data);
     }
@@ -349,6 +413,7 @@ public struct NetworkInputData : INetworkInput
 {
     public Vector2 moveInput;
     public Vector2 moveInputLvl01;
+    public bool runningPressed;
     public bool jumpPressed;
     public bool attackPressed;
     public bool aimActive;

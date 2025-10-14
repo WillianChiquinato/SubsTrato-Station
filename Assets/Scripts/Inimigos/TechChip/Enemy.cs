@@ -55,7 +55,6 @@ public class Enemy : MonoBehaviour
         Agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
 
-        playerDetect = FindFirstObjectByType<PlayerMoviment>();
         itemDrop = GetComponent<ItemDrop>();
     }
 

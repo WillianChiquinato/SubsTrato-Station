@@ -12,6 +12,7 @@ TagManager:
   - Itens
   - Bullet
   - BtnReady
+  - ViewButtons
   layers:
   - Default
   - TransparentFX

@@ -6,6 +6,8 @@ public class Chip : MonoBehaviour
     [field: SerializeField] public UnityEvent OnUse { get; private set; }
     public ItemClass itemClass { get; private set; }
 
+    public GameObject[] referenceHighlight;
+
     public void Use(GameObject actor)
     {
         OnUse?.Invoke();

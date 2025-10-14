@@ -1,13 +1,41 @@
+using TMPro;
 using UnityEngine;
 
 public class ChipSystem : MonoBehaviour
 {
+    public static ChipSystem Instance { get; set; }
+
     public int chipSystemCount = 0;
     public bool AberturaFinal = false;
     public GameObject DoorFinal;
 
+    public OrbSpawner orbSpawner;
+    public GameObject countChipsUI;
+
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    void Start()
+    {
+        orbSpawner = OrbSpawner.Instance;
+
+        var ui = UIreferences.Instance;
+        countChipsUI = ui.textObj;
+    }
+
     void Update()
     {
+        countChipsUI.GetComponent<TextMeshProUGUI>().text = chipSystemCount + "/3";
+
         if (chipSystemCount >= 3)
         {
             AberturaFinal = true;
@@ -23,6 +51,5 @@ public class ChipSystem : MonoBehaviour
     {
         Debug.Log("Interacted with chip: " + gameObject.name);
         chipSystemCount++;
-        //Adicionar particulas após pegar o chip (TODO).
     }
 }

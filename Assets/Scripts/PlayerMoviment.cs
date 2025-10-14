@@ -1,3 +1,4 @@
+using System.Linq;
 using Fusion;
 using UnityEngine;
 
@@ -208,35 +209,6 @@ public class PlayerMoviment : NetworkBehaviour
                 }
             }
 
-
-            if (isMoving)
-            {
-                if (estamina > 0 && !isStealth)
-                {
-                    estamina -= 1.6f * Time.fixedDeltaTime;
-                }
-                else if (isStealth)
-                {
-                    estamina += 1f * Time.fixedDeltaTime;
-                }
-            }
-            else
-            {
-                if (estamina < 50f)
-                {
-                    estamina += 2f * Time.fixedDeltaTime;
-                }
-            }
-
-            if (estamina <= 0)
-            {
-                moveSpeed = 3f;
-            }
-            else
-            {
-                moveSpeed = 6f;
-            }
-
             if (knockbackTimer > 0)
             {
                 character.Move(knockbackVelocity * Time.fixedDeltaTime);
@@ -248,6 +220,7 @@ public class PlayerMoviment : NetworkBehaviour
                 MyInput();
                 DropItem();
                 UseItem();
+                Running(inputData.runningPressed);
 
                 if (inputData.jumpPressed && isGrounded && !isStealth && !aimActive)
                 {
@@ -264,41 +237,13 @@ public class PlayerMoviment : NetworkBehaviour
 
                 if (ItemFlutuante != null)
                 {
-                    Vector3 mousePos = Input.mousePosition;
-                    mousePos.z = itemFlutuanteDistance; // distância da câmera
+                    Vector3 worldPos = playerCameraTransform.position + playerCameraTransform.forward * itemFlutuanteDistance;
 
-                    Vector3 worldPos = Camera.main.ScreenToWorldPoint(mousePos);
                     ItemFlutuante.transform.position = Vector3.Lerp(
                         ItemFlutuante.transform.position,
                         worldPos,
                         Time.fixedDeltaTime * itemFlutuanteSpeed
                     );
-                }
-
-                //Sempre por ultimo.
-                if (myHandItem != null)
-                {
-                    // Movement and gravity still need to be applied even if holding an item
-                    MovePlayer();
-
-                    if (isGrounded && velocity.y < 0)
-                    {
-                        velocity.y = -2f;
-                    }
-
-                    velocity.y += gravity * Time.fixedDeltaTime;
-                    Vector2 moveInput = new Vector2(horizontalInput, verticalInput).normalized;
-                    Vector3 finalMove = new Vector3(moveInput.x, 0, moveInput.y) * moveSpeed;
-
-                    if (!isGrounded)
-                    {
-                        finalMove *= airControlMultiplier;
-                    }
-
-                    finalMove.y = velocity.y;
-                    character.Move(finalMove * Time.fixedDeltaTime);
-
-                    return;
                 }
 
                 CheckPickUp();
@@ -349,6 +294,7 @@ public class PlayerMoviment : NetworkBehaviour
         horizontalInput = inputData.moveInput.x;
         verticalInput = inputData.moveInput.y;
         isStealth = inputData.stealthPressed;
+
         if (isStealth)
         {
             horizontalInput *= 0.4f;
@@ -438,7 +384,6 @@ public class PlayerMoviment : NetworkBehaviour
 
                     if (inputData.interactPressed)
                     {
-                        chip.Interact();
                         Destroy(inventory.myHandItem);
                         inventory.hotbarItems[inventory.selectedSlot] = null;
                         inventory.myHandItem = null;
@@ -481,9 +426,21 @@ public class PlayerMoviment : NetworkBehaviour
             }
             else if (hit.collider.GetComponent<Chip>())
             {
+                HightLights highlight = hit.collider.GetComponent<HightLights>();
+                if (highlight != null)
+                {
+                    highlight.ToggleHighlight(false);
+                }
+
                 Debug.Log("É um item do cenário");
                 ItemFlutuante = hit.collider.gameObject;
                 myHandItem = ItemFlutuante;
+
+                if (highlight != null)
+                {
+                    highlight.ToggleHighlight(false);
+                    Destroy(highlight);
+                }
 
                 if (rb != null)
                 {
@@ -551,10 +508,16 @@ public class PlayerMoviment : NetworkBehaviour
         if (!GetInput(out NetworkInputData inputData)) return;
         if (!networkObject.HasInputAuthority) return;
         if (!inputData.dropItemPressed) return;
-        if (inventory.myHandItem == null) return;
-
-        // Sempre usa RPC, independente de ser servidor ou cliente
-        RPC_RequestDropItem();
+        if (inventory.myHandItem != null)
+        {
+            RPC_RequestDropItem();
+            return;
+        }
+        else if (ItemFlutuante != null)
+        {
+            RPC_RequestDropItemFlutuante();
+            return;
+        }
     }
 
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
@@ -579,6 +542,32 @@ public class PlayerMoviment : NetworkBehaviour
         }
 
         RPC_ClearInventory();
+    }
+
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    private void RPC_RequestDropItemFlutuante()
+    {
+        Transform t = ItemFlutuante.transform;
+
+        Rigidbody rb = t.GetComponent<Rigidbody>();
+        HightLights hl = t.GetComponent<HightLights>();
+        Chip chip = t.GetComponent<Chip>();
+        if (hl == null)
+        {
+            hl = t.gameObject.AddComponent<HightLights>();
+        }
+
+        if (rb == null)
+        {
+            rb = t.gameObject.AddComponent<Rigidbody>();
+            rb.angularVelocity = Random.insideUnitSphere * 10f;
+        }
+
+        hl.renderers = chip.referenceHighlight.Select(go => go.GetComponent<Renderer>()).ToList();
+        rb.isKinematic = false;
+        rb.useGravity = true;
+        ItemFlutuante = null;
+        myHandItem = null;
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
@@ -692,6 +681,20 @@ public class PlayerMoviment : NetworkBehaviour
         if (estaminaBar != null)
         {
             estaminaBar.Boost(amount, duration);
+        }
+    }
+
+    public void Running(bool isRunning)
+    {
+        if (isRunning)
+        {
+            moveSpeed = 11f;
+            estamina -= 6f * Time.fixedDeltaTime;
+        }
+        else
+        {
+            moveSpeed = 6f;
+            estamina += 3f * Time.fixedDeltaTime;
         }
     }
 
