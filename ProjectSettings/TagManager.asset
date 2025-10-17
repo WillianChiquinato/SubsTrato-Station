@@ -13,6 +13,7 @@ TagManager:
   - Bullet
   - BtnReady
   - ViewButtons
+  - CloseButtons
   layers:
   - Default
   - TransparentFX

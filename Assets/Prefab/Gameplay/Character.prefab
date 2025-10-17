@@ -417,74 +417,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!1 &1021592731229159776
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6424850560485946072}
-  - component: {fileID: 403846117205916725}
-  - component: {fileID: 8357373309035825963}
-  m_Layer: 0
-  m_Name: ColisorDireita
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6424850560485946072
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1021592731229159776}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0.5993894, y: 0.45667264, z: -0.64212066, w: -0.14093795}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1.7537938, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 8673085677607573003}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!135 &403846117205916725
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1021592731229159776}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.3
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &8357373309035825963
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1021592731229159776}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eea4fbe0190f9bf4ebca7bcb7c518ba4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  knockbackForce: 140
-  damage: 40
 --- !u!1 &1053039166382595136
 GameObject:
   m_ObjectHideFlags: 0
@@ -791,7 +723,6 @@ Transform:
   m_Children:
   - {fileID: 3397091501344913063}
   - {fileID: 6605399040687985655}
-  - {fileID: 3815878552469362228}
   m_Father: {fileID: 8647235348688850033}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2042386182216851123
@@ -1081,74 +1012,6 @@ Transform:
   - {fileID: 2574004172525850514}
   m_Father: {fileID: 5142880187537731270}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &4592372431099386669
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3815878552469362228}
-  - component: {fileID: 2142371079259339532}
-  - component: {fileID: 5043379520761792009}
-  m_Layer: 0
-  m_Name: ColisorEsquerda
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3815878552469362228
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4592372431099386669}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0.025178278, y: 0.07276013, z: -0.99647415, w: -0.033334397}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1.753794, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4809723331927962241}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!135 &2142371079259339532
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4592372431099386669}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.3
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &5043379520761792009
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4592372431099386669}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eea4fbe0190f9bf4ebca7bcb7c518ba4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  knockbackForce: 20
-  damage: 10
 --- !u!1 &4602444525554992074
 GameObject:
   m_ObjectHideFlags: 0
@@ -1180,7 +1043,6 @@ Transform:
   m_Children:
   - {fileID: 8747761637916883061}
   - {fileID: 1754913532677889500}
-  - {fileID: 6424850560485946072}
   m_Father: {fileID: 8077658402544980851}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4625762913379199050

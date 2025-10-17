@@ -2162,7 +2162,7 @@ MonoBehaviour:
   isMoving: 0
   DeathUI: {fileID: 0}
   velocity: {x: 0, y: 0, z: 0}
-  jumpHeight: 1.5
+  jumpHeight: 1.1
   gravity: -9.81
   airControlMultiplier: 1.2
   isGrounded: 0

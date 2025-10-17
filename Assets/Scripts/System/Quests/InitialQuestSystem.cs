@@ -53,7 +53,7 @@ public class InitialQuestSystem : MonoBehaviour
             isTimerActive = true;
         }
 
-        if (CurrentLeverCount == 3 && !InitialQuestStarted)
+        if (CurrentLeverCount == leversList.Count && !InitialQuestStarted)
         {
             StartInitialQuest();
             InitialQuestStarted = true;

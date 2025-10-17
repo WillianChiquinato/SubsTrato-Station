@@ -27,6 +27,9 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
     public TextMeshProUGUI roomCountPlayers;
     public Button readyButton;
     public Button viewButtons;
+    public Button closeButtons;
+
+    public GameObject roomNamePanel;
 
     public GameObject viewObjs;
     private Dictionary<PlayerRef, bool> _playersReady = new();
@@ -42,7 +45,8 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
     [SerializeField] private string _roomName = "SubstratoNEXT";
     // Scene 0 é a cena atual onde este script está.
     [SerializeField] private int _lobbySceneIndex = 1;
-    [SerializeField] private int _gameplaySceneIndex = 2;
+    [SerializeField] private int _gameplayMultiplayerSceneIndex = 2;
+    [SerializeField] private int _gameplaySingleSceneIndex = 3;
 
     [Header("Configurações de Gameplay")]
     public NetworkObject _playerPrefab;
@@ -60,6 +64,8 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
             multiplayerButton = GameObject.Find("MultiPlayer")?.GetComponent<Button>();
             configButton = GameObject.Find("Configuracoes")?.GetComponent<Button>();
             exitButton = GameObject.Find("Sair")?.GetComponent<Button>();
+
+            roomNamePanel = GameObject.Find("RoomNameContainer");
         }
     }
 
@@ -72,7 +78,11 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         }
         if (multiplayerButton)
         {
-            multiplayerButton.onClick.AddListener(() => OnGameModeSelected(GameMode.AutoHostOrClient));
+            multiplayerButton.onClick.AddListener(() => StartCoroutine(OpenRoomNamePanel()));
+        }
+        if (roomNamePanel.transform.GetChild(1).GetComponent<Button>())
+        {
+            roomNamePanel.transform.GetChild(1).GetComponent<Button>().onClick.AddListener(() => OnGameModeSelected(GameMode.AutoHostOrClient));
         }
         if (configButton)
         {
@@ -86,6 +96,15 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
 
     private async void OnGameModeSelected(GameMode selectedMode)
     {
+        if (roomNamePanel.transform.GetChild(0).GetComponent<TMP_InputField>() != null && !string.IsNullOrEmpty(roomNamePanel.transform.GetChild(0).GetComponent<TMP_InputField>().text))
+        {
+            _roomName = roomNamePanel.transform.GetChild(0).GetComponent<TMP_InputField>().text;
+        }
+        else
+        {
+            _roomName = "SalaPadrao";
+        }
+
         if (Runner == null || !Runner.IsRunning)
         {
             await StartNetwork(selectedMode);
@@ -93,6 +112,37 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         else
         {
             Debug.Log("Network já está rodando.");
+        }
+    }
+
+    IEnumerator OpenRoomNamePanel()
+    {
+        if (roomNamePanel != null)
+        {
+            CanvasGroup canvasGroup = roomNamePanel.GetComponent<CanvasGroup>();
+            if (canvasGroup != null)
+            {
+                // Fade in
+                float duration = 0.5f;
+                float elapsed = 0f;
+                while (elapsed < duration)
+                {
+                    elapsed += Time.deltaTime;
+                    canvasGroup.alpha = Mathf.Clamp01(elapsed / duration);
+                    yield return null;
+                }
+                canvasGroup.alpha = 1f;
+                canvasGroup.interactable = true;
+                canvasGroup.blocksRaycasts = true;
+            }
+            else
+            {
+                Debug.LogWarning("CanvasGroup não encontrado em roomNamePanel.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("roomNamePanel não atribuído.");
         }
     }
 
@@ -125,8 +175,11 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
                     GameMode = mode,
                     SessionName = _roomName,
                     Scene = SceneRef.FromIndex(_lobbySceneIndex),
+                    SceneManager = sceneManager,
                     PlayerCount = 4,
-                    SceneManager = sceneManager
+                    CustomLobbyName = "GlobalLobby",
+                    Address = NetAddress.Any(),
+                    SessionProperties = new Dictionary<string, SessionProperty>()
                 });
 
                 if (result.Ok)
@@ -148,8 +201,11 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
                 GameMode = mode,
                 SessionName = _roomName,
                 Scene = SceneRef.FromIndex(_lobbySceneIndex),
+                SceneManager = sceneManager,
                 PlayerCount = 4,
-                SceneManager = sceneManager
+                CustomLobbyName = "GlobalLobby",
+                Address = NetAddress.Any(),
+                SessionProperties = new Dictionary<string, SessionProperty>()
             });
 
             if (result.Ok)
@@ -171,11 +227,13 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
             {
                 readyButton = GameObject.FindGameObjectWithTag("BtnReady").GetComponent<Button>();
                 viewButtons = GameObject.FindGameObjectWithTag("ViewButtons").GetComponent<Button>();
+                closeButtons = GameObject.FindGameObjectWithTag("CloseButtons").GetComponent<Button>();
             }
             else
             {
                 readyButton = GameObject.FindGameObjectWithTag("BtnReady").GetComponent<Button>();
                 viewButtons = GameObject.FindGameObjectWithTag("ViewButtons").GetComponent<Button>();
+                closeButtons = GameObject.FindGameObjectWithTag("CloseButtons").GetComponent<Button>();
             }
         }
     }
@@ -206,6 +264,13 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
                 viewButtons.onClick.AddListener(() => StartCoroutine(ViewButtonsInputs()));
                 Debug.Log("Botão View configurado.");
             }
+
+            if (closeButtons != null)
+            {
+                closeButtons.onClick.RemoveAllListeners();
+                closeButtons.onClick.AddListener(() => StartCoroutine(ViewButtonsInputsClose()));
+                Debug.Log("Botão Close configurado.");
+            }
         }
     }
 
@@ -218,14 +283,26 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         if (Runner.IsSceneAuthority)
         {
             Debug.Log($"Jogador {Runner.LocalPlayer} marcou como pronto. Total prontos: {_playersReady.Count}/{Runner.ActivePlayers.Count()}");
-            // Verifica se todos estão prontos
-            if (_playersReady.Count >= _minPlayersToStartGame)
+            if (Runner.ActivePlayers.Count() > 1)
             {
                 if (!_isLoadingGameplayScene)
                 {
-                    Debug.Log("Todos os jogadores prontos. Iniciando cena de gameplay.");
+                    Debug.Log("Jogador pronto. Iniciando cena de gameplay single player.");
                     _isLoadingGameplayScene = true;
-                    levelLoader.Transicao(SceneRef.FromIndex(_gameplaySceneIndex), Runner);
+                    levelLoader.Transicao(SceneRef.FromIndex(_gameplaySingleSceneIndex), Runner);
+                }
+            }
+            else
+            {
+                // Verifica se todos estão prontos
+                if (_playersReady.Count >= _minPlayersToStartGame)
+                {
+                    if (!_isLoadingGameplayScene)
+                    {
+                        Debug.Log("Todos os jogadores prontos. Iniciando cena de gameplay.");
+                        _isLoadingGameplayScene = true;
+                        levelLoader.Transicao(SceneRef.FromIndex(_gameplayMultiplayerSceneIndex), Runner);
+                    }
                 }
             }
         }
@@ -250,6 +327,37 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
                 canvasGroup.alpha = 1f;
                 canvasGroup.interactable = true;
                 canvasGroup.blocksRaycasts = true;
+            }
+            else
+            {
+                Debug.LogWarning("CanvasGroup não encontrado em ViewObjs.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("ViewObjs não atribuído.");
+        }
+    }
+
+    public IEnumerator ViewButtonsInputsClose()
+    {
+        if (viewObjs != null)
+        {
+            CanvasGroup canvasGroup = viewObjs.GetComponent<CanvasGroup>();
+            if (canvasGroup != null)
+            {
+                // Fade in
+                float duration = 0.5f;
+                float elapsed = 1f;
+                while (elapsed < duration)
+                {
+                    elapsed += Time.deltaTime;
+                    canvasGroup.alpha = Mathf.Clamp01(elapsed / duration);
+                    yield return null;
+                }
+                canvasGroup.alpha = 0f;
+                canvasGroup.interactable = false;
+                canvasGroup.blocksRaycasts = false;
             }
             else
             {
@@ -310,7 +418,7 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         }
 
         //Se for a cena de gameplay, spawna aqui.
-        if (runner.IsServer && currentSceneRef == SceneRef.FromIndex(_gameplaySceneIndex))
+        if (runner.IsServer && currentSceneRef == SceneRef.FromIndex(_gameplayMultiplayerSceneIndex))
         {
             List<Vector3> spawnPoints = new List<Vector3>()
             {
@@ -345,6 +453,23 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
 
                 index++;
             }
+        }
+
+        //Single player.
+        if (runner.IsServer && currentSceneRef == SceneRef.FromIndex(_gameplaySingleSceneIndex))
+        {
+            Debug.LogWarning("Modo Single Player - Spawnando jogador único.");
+            List<Vector3> spawnPoints = new List<Vector3>()
+            {
+                new Vector3(-16.4f, 1f, 8.04f),
+            };
+
+            Vector3 spawnPos = spawnPoints[0];
+            var obj = runner.Spawn(_playerPrefabLvl01, spawnPos,
+                                   Quaternion.identity, runner.ActivePlayers.First());
+            _spawnedCharacters[runner.ActivePlayers.First()] = obj;
+            _spawnedCharacters[runner.ActivePlayers.First()].GetComponent<Animator>().SetBool("StartGame", true);
+            Debug.Log($"Prefab do Level01 spawnado para {runner.ActivePlayers.First()} na posição {spawnPos}");
         }
 
         //Configuração de UI do lobby continua igual.
@@ -389,6 +514,11 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         data.arremessarPressed = Input.GetMouseButtonUp(1);
         data.runningPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 
+        data.dancinHipHop = Input.GetKey(KeyCode.Alpha1);
+        data.dancinSalsa = Input.GetKey(KeyCode.Alpha2);
+        data.dancinSwing = Input.GetKey(KeyCode.Alpha3);
+
+
         input.Set(data);
     }
 
@@ -424,4 +554,8 @@ public struct NetworkInputData : INetworkInput
 
     public bool prepareArremessoPressed;
     public bool arremessarPressed;
+
+    public bool dancinHipHop;
+    public bool dancinSalsa;
+    public bool dancinSwing;
 }

@@ -5,7 +5,7 @@ public class CharacterMultiplayer : NetworkBehaviour
 {
     [Header("Sounds")]
     public AudioSource PassosSound;
-    public AudioSource AttackSound;
+    public bool isDancinNow = false;
 
     [Header("Movement")]
     public float moveSpeed;
@@ -20,12 +20,10 @@ public class CharacterMultiplayer : NetworkBehaviour
 
     [Header("Gravidade player")]
     public Vector3 velocity;
+    private float lastGroundedTime;
+    private float coyoteTime = 0.1f;
     public float jumpHeight = 1.5f;
     public float gravity = -9.81f;
-
-    [Header("Attack")]
-    public CharacterMultiplayerAttack attackCollider1;
-    public CharacterMultiplayerAttack attackCollider2;
 
     [Header("GroundCheck")]
     public bool isGrounded;
@@ -48,12 +46,6 @@ public class CharacterMultiplayer : NetworkBehaviour
         capsuleColliderCharacter = GetComponent<CapsuleCollider>();
         animator = GetComponent<Animator>();
         health = GetComponent<Health>();
-
-        attackCollider1 = transform.Find("mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/mixamorig:LeftShoulder/mixamorig:LeftArm/mixamorig:LeftForeArm/mixamorig:LeftHand/ColisorEsquerda").GetComponent<CharacterMultiplayerAttack>();
-        attackCollider2 = transform.Find("mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/mixamorig:RightShoulder/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand/ColisorDireita").GetComponent<CharacterMultiplayerAttack>();
-
-        attackCollider1.GetComponent<SphereCollider>().enabled = false;
-        attackCollider2.GetComponent<SphereCollider>().enabled = false;
     }
 
     public override void FixedUpdateNetwork()
@@ -63,10 +55,17 @@ public class CharacterMultiplayer : NetworkBehaviour
         if (character == null) return;
 
         isGrounded = character.isGrounded;
+        if (character.isGrounded)
+        {
+            lastGroundedTime = Runner.SimulationTime;
+        }
+
+        bool isActuallyGrounded = Runner.SimulationTime - lastGroundedTime < coyoteTime;
         animator.SetBool("IsGround", isGrounded);
         animator.SetBool("Jump", isGrounded);
         animator.SetFloat("yVelocity", velocity.y);
         animator.SetBool("IsAlive", health.isAlive);
+        animator.SetBool("isDancinNow", isDancinNow);
 
         if (!health.isAlive)
         {
@@ -91,24 +90,32 @@ public class CharacterMultiplayer : NetworkBehaviour
 
         if (canMove)
         {
+            animator.applyRootMotion = false;
+
             HandleMovement(inputData);
             HandleRotation(inputData);
 
             HandleAnimations(inputData);
-            HandleAttack(inputData);
+            HandleDancin(inputData);
 
-            // Jump
-            if (isGrounded && inputData.jumpPressed)
+            if (isActuallyGrounded && inputData.jumpPressed)
             {
                 Jump();
             }
 
-            // Gravidade
-            if (isGrounded && velocity.y < 0)
+            if (isActuallyGrounded && velocity.y < 0)
+            {
                 velocity.y = -2f;
+            }
 
             velocity.y += gravity * Runner.DeltaTime;
         }
+        else
+        {
+            animator.applyRootMotion = true;
+        }
+
+        Debug.LogWarning("Console " + animator.applyRootMotion);
     }
 
     void OnAnimatorMove()
@@ -168,54 +175,41 @@ public class CharacterMultiplayer : NetworkBehaviour
     }
 
 
-    private void HandleAttack(NetworkInputData inputData)
+    private void HandleDancin(NetworkInputData inputData)
     {
-        if (animator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
+        isDancinNow = inputData.dancinHipHop || inputData.dancinSalsa || inputData.dancinSwing;
+
+        int danceHipHop = inputData.dancinHipHop ? 1 : 0;
+        int danceSalsa = inputData.dancinSalsa ? 2 : 0;
+        int danceSwing = inputData.dancinSwing ? 3 : 0;
+
+        if (animator.GetCurrentAnimatorStateInfo(0).IsName("HipHop") ||
+            animator.GetCurrentAnimatorStateInfo(0).IsName("SalsaDance") ||
+            animator.GetCurrentAnimatorStateInfo(0).IsName("SwingDance"))
         {
-            if (!AttackSound.isPlaying)
+            if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.97f)
             {
-                AttackSound.Play();
-            }
-            animator.applyRootMotion = true;
-
-            if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.15f)
-            {
-                attackCollider1.GetComponent<SphereCollider>().enabled = true;
-
-                if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.3f)
-                {
-                    attackCollider1.GetComponent<SphereCollider>().enabled = false;
-
-                    if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.4f)
-                    {
-                        attackCollider2.GetComponent<SphereCollider>().enabled = true;
-
-                        if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.7f)
-                        {
-                            attackCollider2.GetComponent<SphereCollider>().enabled = false;
-                            if (AttackSound.isPlaying)
-                            {
-                                AttackSound.Stop();
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.9f)
-            {
-                attackCollider1.GetComponent<SphereCollider>().enabled = false;
-                attackCollider2.GetComponent<SphereCollider>().enabled = false;
-
-                attackCollider1.ResetAttack();
-                attackCollider2.ResetAttack();
-                ResetAttack();
+                isDancinNow = false;
+                animator.applyRootMotion = false;
+                animator.SetInteger("DanceNumber", 0);
             }
         }
 
-        if (inputData.attackPressed && canMove && isGrounded)
+        if (danceHipHop != 0)
         {
-            Attack();
+            animator.SetInteger("DanceNumber", danceHipHop);
+        }
+        else if (danceSalsa != 0)
+        {
+            animator.SetInteger("DanceNumber", danceSalsa);
+        }
+        else if (danceSwing != 0)
+        {
+            animator.SetInteger("DanceNumber", danceSwing);
+        }
+        else
+        {
+            animator.SetInteger("DanceNumber", 0);
         }
     }
 
