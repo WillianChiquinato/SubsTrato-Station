@@ -5,7 +5,11 @@ public class CharacterMultiplayer : NetworkBehaviour
 {
     [Header("Sounds")]
     public AudioSource PassosSound;
+    public AudioSource HipHopSound;
+    public AudioSource SalsaSound;
+    public AudioSource SwingSound;
     public bool isDancinNow = false;
+    public bool isRemaining = false;
 
     [Header("Movement")]
     public float moveSpeed;
@@ -88,6 +92,7 @@ public class CharacterMultiplayer : NetworkBehaviour
             knockbackTimer -= Runner.DeltaTime;
         }
 
+        HandleDancin(inputData);
         if (canMove)
         {
             animator.applyRootMotion = false;
@@ -96,7 +101,6 @@ public class CharacterMultiplayer : NetworkBehaviour
             HandleRotation(inputData);
 
             HandleAnimations(inputData);
-            HandleDancin(inputData);
 
             if (isActuallyGrounded && inputData.jumpPressed)
             {
@@ -178,34 +182,65 @@ public class CharacterMultiplayer : NetworkBehaviour
     private void HandleDancin(NetworkInputData inputData)
     {
         isDancinNow = inputData.dancinHipHop || inputData.dancinSalsa || inputData.dancinSwing;
+        int danceHipHop = 0;
+        int danceSalsa = 0;
+        int danceSwing = 0;
 
-        int danceHipHop = inputData.dancinHipHop ? 1 : 0;
-        int danceSalsa = inputData.dancinSalsa ? 2 : 0;
-        int danceSwing = inputData.dancinSwing ? 3 : 0;
+        if (!isRemaining)
+        {
+            danceHipHop = inputData.dancinHipHop ? 1 : 0;
+            danceSalsa = inputData.dancinSalsa ? 3 : 0;
+            danceSwing = inputData.dancinSwing ? 2 : 0;
+        }
 
         if (animator.GetCurrentAnimatorStateInfo(0).IsName("HipHop") ||
             animator.GetCurrentAnimatorStateInfo(0).IsName("SalsaDance") ||
             animator.GetCurrentAnimatorStateInfo(0).IsName("SwingDance"))
         {
-            if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.97f)
+            isRemaining = true;
+            if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.9f)
             {
+                danceHipHop = 0;
+                danceSalsa = 0;
+                danceSwing = 0;
+
                 isDancinNow = false;
                 animator.applyRootMotion = false;
                 animator.SetInteger("DanceNumber", 0);
+            }
+
+            if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.96f)
+            {
+                HipHopSound.Stop();
+                SalsaSound.Stop();
+                SwingSound.Stop();
+                isRemaining = false;
             }
         }
 
         if (danceHipHop != 0)
         {
             animator.SetInteger("DanceNumber", danceHipHop);
+            if (!isRemaining)
+            {
+                HipHopSound.Play();
+            }
         }
         else if (danceSalsa != 0)
         {
             animator.SetInteger("DanceNumber", danceSalsa);
+            if (!isRemaining)
+            {
+                SalsaSound.Play();
+            }
         }
         else if (danceSwing != 0)
         {
             animator.SetInteger("DanceNumber", danceSwing);
+            if (!isRemaining)
+            {
+                SwingSound.Play();
+            }
         }
         else
         {
