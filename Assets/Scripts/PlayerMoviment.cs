@@ -63,8 +63,8 @@ public class PlayerMoviment : NetworkBehaviour
     public bool Arremessar = false;
 
     [Header("Health e HealthBar")]
-    [HideInInspector] public Health health;
-    [HideInInspector] public EstaminaBar estaminaBar;
+    public Health health;
+    public EstaminaBar estaminaBar;
     public float estamina = 50f;
 
     public PlayerInventory inventory;
@@ -103,7 +103,6 @@ public class PlayerMoviment : NetworkBehaviour
         capsuleColliderCharacter = GetComponent<CapsuleCollider>();
         animator = GetComponent<Animator>();
         health = GetComponent<Health>();
-        estaminaBar = GetComponent<EstaminaBar>();
 
         animator.SetBool("StartGame", true);
 
@@ -118,6 +117,7 @@ public class PlayerMoviment : NetworkBehaviour
         var ui = UIreferences.Instance;
         DeathUI = ui.DeathUI;
         pickUpUI = ui.PickUpItemUI;
+        estaminaBar = ui.EstaminaBarUI.GetComponent<EstaminaBar>();
         DeathUI.SetActive(false);
         pickUpUI.SetActive(false);
     }
@@ -689,12 +689,22 @@ public class PlayerMoviment : NetworkBehaviour
         if (isRunning)
         {
             moveSpeed = 11f;
-            estamina -= 6f * Time.fixedDeltaTime;
+            if (estamina > 0)
+            {
+                estamina -= 6f * Time.fixedDeltaTime;
+            }
+            else
+            {
+                moveSpeed = 6f;
+            }
         }
         else
         {
             moveSpeed = 6f;
-            estamina += 3f * Time.fixedDeltaTime;
+            if (estamina <= 50)
+            {
+                estamina += 3f * Time.fixedDeltaTime;
+            }
         }
     }
 

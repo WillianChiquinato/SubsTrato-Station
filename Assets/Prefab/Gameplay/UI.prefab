@@ -364,6 +364,7 @@ MonoBehaviour:
   TimingBar: {fileID: 5553033689519738411}
   OrbesCountUI: {fileID: 5839180952923989548}
   textObj: {fileID: 8991703620944586553}
+  EstaminaBarUI: {fileID: 4625842082007872053}
 --- !u!1 &541317918346440657
 GameObject:
   m_ObjectHideFlags: 0

@@ -283,7 +283,7 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         if (Runner.IsSceneAuthority)
         {
             Debug.Log($"Jogador {Runner.LocalPlayer} marcou como pronto. Total prontos: {_playersReady.Count}/{Runner.ActivePlayers.Count()}");
-            if (Runner.ActivePlayers.Count() > 1)
+            if (Runner.ActivePlayers.Count() < 2)
             {
                 if (!_isLoadingGameplayScene)
                 {

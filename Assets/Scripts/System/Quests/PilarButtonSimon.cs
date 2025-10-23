@@ -7,6 +7,8 @@ public class PilarButtonSimon : MonoBehaviour, IUsable
     public GameObject SimonGameObject;
     public bool simonPilarReset = false;
 
+    public AudioSource audioSourceBtnInitial;
+
     void Start()
     {
         simonPilarReset = true;
@@ -32,6 +34,10 @@ public class PilarButtonSimon : MonoBehaviour, IUsable
     public void OnClickSimonGame()
     {
         SimonGameObject.GetComponent<SimonGame>().StartCoroutine(SimonGameObject.GetComponent<SimonGame>().StartRound());
+        if (!audioSourceBtnInitial.isPlaying)
+        {
+            AudioSource.PlayClipAtPoint(audioSourceBtnInitial.clip, transform.position);
+        }
         simonPilarReset = true;
     }
 }

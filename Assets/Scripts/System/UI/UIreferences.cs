@@ -20,6 +20,8 @@ public class UIreferences : MonoBehaviour
     public GameObject OrbesCountUI;
     public GameObject textObj;
 
+    public GameObject EstaminaBarUI;
+
     private void Awake()
     {
         if (Instance == null)

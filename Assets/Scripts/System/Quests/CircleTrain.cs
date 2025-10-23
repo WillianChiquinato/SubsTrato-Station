@@ -7,6 +7,7 @@ public class CircleTrain : MonoBehaviour
     [Header("Círculos (ordem do 1 ao 6)")]
     public List<Transform> circles;
     public GameObject[] DoorInitialGame;
+    public AudioSource audioSourceMoviment;
 
     [Header("Intervalo de movimento (segundos)")]
     private float moveInterval = 2.6f;
@@ -60,6 +61,11 @@ public class CircleTrain : MonoBehaviour
         {
             yield return new WaitForSeconds(moveInterval);
 
+            if (!audioSourceMoviment.isPlaying)
+            {
+                AudioSource.PlayClipAtPoint(audioSourceMoviment.clip, transform.position);
+            }
+            audioSourceMoviment.Play();
             Vector3 lastPos = targetPositions[targetPositions.Count - 1];
             for (int i = targetPositions.Count - 1; i > 0; i--)
             {
