@@ -46472,6 +46472,7 @@ GameObject:
   - component: {fileID: 4330754511676972146}
   - component: {fileID: 3262326726367330554}
   - component: {fileID: 50020333155183150}
+  - component: {fileID: 7888202205069067856}
   m_Layer: 5
   m_Name: UI
   m_TagString: Untagged
@@ -48609,7 +48610,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 1
+  m_PresetInfoIsWorld: 0
 --- !u!1 &3272841212567097526
 GameObject:
   m_ObjectHideFlags: 0
@@ -52207,6 +52208,22 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &7888202205069067856
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 224184820747642336}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d00204a8c07b4645a34b9abc20d394b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  player: {fileID: 0}
+  MostrarBtn: {fileID: 1129817406}
+  ViewObjs: {fileID: 1852878763}
+  SelectedSkinsUI: {fileID: 685266884}
 --- !u!4 &7894360320302379812
 Transform:
   m_ObjectHideFlags: 0

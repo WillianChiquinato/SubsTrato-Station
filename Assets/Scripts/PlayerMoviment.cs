@@ -160,7 +160,6 @@ public class PlayerMoviment : NetworkBehaviour
         }
     }
 
-
     public override void FixedUpdateNetwork()
     {
         if (!networkObject.HasInputAuthority) return;
@@ -218,18 +217,15 @@ public class PlayerMoviment : NetworkBehaviour
             if (canMove)
             {
                 MyInput();
-                if (!Arremessar)
+                DropItem();
+                UseItem();
+
+                Debug.DrawRay(playerCameraTransform.position, playerCameraTransform.forward * pickUpDistance, Color.red);
+                //Pickable items
+                if (hit.collider != null)
                 {
-                    DropItem();
-                    UseItem();
-                    
-                    Debug.DrawRay(playerCameraTransform.position, playerCameraTransform.forward * pickUpDistance, Color.red);
-                    //Pickable items
-                    if (hit.collider != null)
-                    {
-                        hit.collider.GetComponent<HightLights>()?.ToggleHighlight(false);
-                        pickUpUI.SetActive(false);
-                    }
+                    hit.collider.GetComponent<HightLights>()?.ToggleHighlight(false);
+                    pickUpUI.SetActive(false);
                 }
                 Running(inputData.runningPressed);
 
@@ -510,6 +506,7 @@ public class PlayerMoviment : NetworkBehaviour
     public void DropItem()
     {
         if (!GetInput(out NetworkInputData inputData)) return;
+        if (Arremessar) return;
         if (!networkObject.HasInputAuthority) return;
         if (!inputData.dropItemPressed) return;
         if (inventory.myHandItem != null)

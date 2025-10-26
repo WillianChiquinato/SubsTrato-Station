@@ -51,6 +51,7 @@ public class PlayerInventory : MonoBehaviour
         if (!player.networkObject.HasInputAuthority) return;
         float scroll = Input.GetAxis("Mouse ScrollWheel");
         if (player.aimAnimActive) return;
+        if (player.Arremessar) return;
 
         if (scroll > 0f)
         {

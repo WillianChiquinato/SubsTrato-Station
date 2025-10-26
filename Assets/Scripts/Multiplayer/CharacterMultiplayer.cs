@@ -3,6 +3,8 @@ using UnityEngine;
 
 public class CharacterMultiplayer : NetworkBehaviour
 {
+    public NetworkObject networkObject;
+
     [Header("Sounds")]
     public AudioSource PassosSound;
     public AudioSource HipHopSound;
@@ -44,18 +46,68 @@ public class CharacterMultiplayer : NetworkBehaviour
         set { animator.SetBool("canMove", value); }
     }
 
+    void Awake()
+    {
+        networkObject = GetComponent<NetworkObject>();
+
+        if (networkObject == null)
+        {
+            Debug.LogError("NetworkObject não encontrado no Awake!");
+        }
+        else
+        {
+            Debug.Log($"NetworkObject encontrado no Awake: {networkObject.Id}");
+        }
+    }
+
     void Start()
     {
         character = GetComponent<CharacterController>();
         capsuleColliderCharacter = GetComponent<CapsuleCollider>();
         animator = GetComponent<Animator>();
         health = GetComponent<Health>();
+
+        var ui = UIreferencesLobby.Instance;
+        ui.MostrarBtn.SetActive(true);
+        ui.ViewObjs.GetComponent<CanvasGroup>().alpha = 0;
+        ui.ViewObjs.GetComponent<CanvasGroup>().interactable = false;
+        ui.ViewObjs.GetComponent<CanvasGroup>().blocksRaycasts = false;
+        ui.SelectedSkinsUI.SetActive(false);
+    }
+
+    public override void Spawned()
+    {
+        if (networkObject != null && networkObject.HasInputAuthority)
+        {
+            Debug.Log("Configurando para jogador local");
+            UIreferencesLobby.Instance.player = gameObject;
+        }
+
+        if (Runner == null)
+        {
+            Debug.LogError("Runner ainda é null após Spawned()! Isso é um problema grave.");
+
+            // Tentar encontrar o Runner manualmente
+            NetworkRunner foundRunner = FindFirstObjectByType<NetworkRunner>();
+            if (foundRunner != null)
+            {
+                Debug.Log($"Runner encontrado manualmente: {foundRunner.name}");
+            }
+            else
+            {
+                Debug.LogError("Nenhum NetworkRunner encontrado na cena!");
+            }
+        }
+        else
+        {
+            Debug.Log("Runner encontrado: " + Runner.name);
+        }
     }
 
     public override void FixedUpdateNetwork()
     {
         if (!GetInput(out NetworkInputData inputData)) return;
-        if (!Object.HasStateAuthority) return;
+        if (!networkObject.HasInputAuthority) return;
         if (character == null) return;
 
         isGrounded = character.isGrounded;
@@ -153,7 +205,7 @@ public class CharacterMultiplayer : NetworkBehaviour
 
     private void HandleAnimations(NetworkInputData inputData)
     {
-        if (!Object.HasInputAuthority) return;
+        if (!networkObject.HasInputAuthority) return;
 
         isMoving = inputData.moveInput.magnitude > 0.1f;
         animator.SetBool("Run", isMoving);
