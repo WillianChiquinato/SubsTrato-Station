@@ -218,8 +218,19 @@ public class PlayerMoviment : NetworkBehaviour
             if (canMove)
             {
                 MyInput();
-                DropItem();
-                UseItem();
+                if (!Arremessar)
+                {
+                    DropItem();
+                    UseItem();
+                    
+                    Debug.DrawRay(playerCameraTransform.position, playerCameraTransform.forward * pickUpDistance, Color.red);
+                    //Pickable items
+                    if (hit.collider != null)
+                    {
+                        hit.collider.GetComponent<HightLights>()?.ToggleHighlight(false);
+                        pickUpUI.SetActive(false);
+                    }
+                }
                 Running(inputData.runningPressed);
 
                 if (inputData.jumpPressed && isGrounded && !isStealth && !aimActive)
@@ -227,13 +238,6 @@ public class PlayerMoviment : NetworkBehaviour
                     Jump();
                 }
 
-                Debug.DrawRay(playerCameraTransform.position, playerCameraTransform.forward * pickUpDistance, Color.red);
-                //Pickable items
-                if (hit.collider != null)
-                {
-                    hit.collider.GetComponent<HightLights>()?.ToggleHighlight(false);
-                    pickUpUI.SetActive(false);
-                }
 
                 if (ItemFlutuante != null)
                 {

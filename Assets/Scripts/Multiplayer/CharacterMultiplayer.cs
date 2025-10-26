@@ -80,11 +80,6 @@ public class CharacterMultiplayer : NetworkBehaviour
             return;
         }
 
-        if (!isGrounded)
-        {
-            animator.applyRootMotion = false;
-        }
-
         // Knockback
         if (knockbackTimer > 0)
         {
@@ -93,13 +88,19 @@ public class CharacterMultiplayer : NetworkBehaviour
         }
 
         HandleDancin(inputData);
-        if (canMove)
-        {
-            animator.applyRootMotion = false;
 
+        // Determina se o root motion deve estar ativo
+        AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
+        bool isAttackOrDance = state.IsName("Attack") || state.IsName("HipHop") ||
+                               state.IsName("SalsaDance") || state.IsName("SwingDance");
+
+        // Root motion ativo apenas durante ataque/dança e se o personagem estiver vivo
+        animator.applyRootMotion = isAttackOrDance && health.isAlive;
+
+        if (canMove && !isAttackOrDance)
+        {
             HandleMovement(inputData);
             HandleRotation(inputData);
-
             HandleAnimations(inputData);
 
             if (isActuallyGrounded && inputData.jumpPressed)
@@ -114,24 +115,16 @@ public class CharacterMultiplayer : NetworkBehaviour
 
             velocity.y += gravity * Runner.DeltaTime;
         }
-        else
-        {
-            animator.applyRootMotion = true;
-        }
 
-        Debug.LogWarning("Console " + animator.applyRootMotion);
+        Debug.LogWarning("RootMotion ativo: " + animator.applyRootMotion);
     }
 
     void OnAnimatorMove()
     {
         if (animator.applyRootMotion)
         {
-            // pega o deslocamento da animação
             Vector3 rootMotion = animator.deltaPosition;
-
-            // mantém o controle da gravidade
             rootMotion.y = velocity.y * Runner.DeltaTime;
-
             character.Move(rootMotion);
         }
     }
@@ -178,7 +171,6 @@ public class CharacterMultiplayer : NetworkBehaviour
         animator.SetFloat("vertical", inputData.moveInput.y);
     }
 
-
     private void HandleDancin(NetworkInputData inputData)
     {
         isDancinNow = inputData.dancinHipHop || inputData.dancinSalsa || inputData.dancinSwing;
@@ -193,23 +185,19 @@ public class CharacterMultiplayer : NetworkBehaviour
             danceSwing = inputData.dancinSwing ? 2 : 0;
         }
 
-        if (animator.GetCurrentAnimatorStateInfo(0).IsName("HipHop") ||
-            animator.GetCurrentAnimatorStateInfo(0).IsName("SalsaDance") ||
-            animator.GetCurrentAnimatorStateInfo(0).IsName("SwingDance"))
+        AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
+        if (state.IsName("HipHop") || state.IsName("SalsaDance") || state.IsName("SwingDance"))
         {
             isRemaining = true;
-            if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.9f)
+            if (state.normalizedTime >= 0.9f)
             {
-                danceHipHop = 0;
-                danceSalsa = 0;
-                danceSwing = 0;
-
+                danceHipHop = danceSalsa = danceSwing = 0;
                 isDancinNow = false;
                 animator.applyRootMotion = false;
                 animator.SetInteger("DanceNumber", 0);
             }
 
-            if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.96f)
+            if (state.normalizedTime >= 0.96f)
             {
                 HipHopSound.Stop();
                 SalsaSound.Stop();
@@ -221,26 +209,17 @@ public class CharacterMultiplayer : NetworkBehaviour
         if (danceHipHop != 0)
         {
             animator.SetInteger("DanceNumber", danceHipHop);
-            if (!isRemaining)
-            {
-                HipHopSound.Play();
-            }
+            if (!isRemaining) HipHopSound.Play();
         }
         else if (danceSalsa != 0)
         {
             animator.SetInteger("DanceNumber", danceSalsa);
-            if (!isRemaining)
-            {
-                SalsaSound.Play();
-            }
+            if (!isRemaining) SalsaSound.Play();
         }
         else if (danceSwing != 0)
         {
             animator.SetInteger("DanceNumber", danceSwing);
-            if (!isRemaining)
-            {
-                SwingSound.Play();
-            }
+            if (!isRemaining) SwingSound.Play();
         }
         else
         {
@@ -258,10 +237,10 @@ public class CharacterMultiplayer : NetworkBehaviour
         animator.SetTrigger("Attack");
         canMove = false;
         moveDirection = Vector3.zero;
-        Invoke("ResetAttack", 1.5f);
     }
 
-    private void ResetAttack()
+    // Chamado no fim da animação de ataque (adicione Animation Event)
+    public void OnAttackAnimationEnd()
     {
         animator.applyRootMotion = false;
         canMove = true;
