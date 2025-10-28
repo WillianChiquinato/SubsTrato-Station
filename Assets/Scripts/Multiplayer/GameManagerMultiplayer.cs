@@ -376,6 +376,13 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         Debug.Log($"Jogador {player} entrou. Cena atual: {GetSceneInfo()}");
         if (runner.IsServer)
         {
+            // Remove jogador antigo se existir
+            if (_spawnedCharacters.ContainsKey(player))
+            {
+                runner.Despawn(_spawnedCharacters[player]);
+                _spawnedCharacters.Remove(player);
+            }
+
             if (GetSceneInfo() == SceneRef.FromIndex(_lobbySceneIndex).ToString())
             {
                 if (_playerPrefab != null)
@@ -383,11 +390,7 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
                     Vector3 spawnPosition = new Vector3(0.16f, 0.8f, -10f);
                     NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
                     _spawnedCharacters[player] = networkPlayerObject;
-                    Debug.Log($"Prefab do jogador spawnado para {player} na cena {GetSceneInfo()}.");
-                }
-                else
-                {
-                    Debug.LogError("Player Prefab não atribuído.");
+                    Debug.Log($"Prefab do jogador respawnado para {player}");
                 }
             }
         }

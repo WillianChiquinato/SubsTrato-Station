@@ -1680,21 +1680,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85eb816783a6e204da9765802e00b4eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  networkObject: {fileID: 0}
+  _NetworkPosition: {x: 0, y: 0, z: 0}
+  _NetworkRotation: {x: 0, y: 0, z: 0, w: 0}
   PassosSound: {fileID: 5030184160617847390}
   HipHopSound: {fileID: 1174644229244592198}
   SalsaSound: {fileID: 8479693050478318487}
   SwingSound: {fileID: 7096160145942711097}
-  isDancinNow: 0
+  _isDancinNow: 0
+  _isRemaining: 0
   moveSpeed: 3
   character: {fileID: 0}
   capsuleColliderCharacter: {fileID: 0}
   animator: {fileID: 0}
   isMoving: 0
   selectedSkinIndex: 0
-  velocity: {x: 0, y: 0, z: 0}
+  _velocity: {x: 0, y: 0, z: 0}
   jumpHeight: 1.2
   gravity: -9.81
-  isGrounded: 0
+  _isGrounded: 0
   knockbackDuration: 0.3
   health: {fileID: 0}
 --- !u!114 &375807728519153052
@@ -1731,8 +1735,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _stateAuthorityChangeErrorCorrectionDelta: 0
-  SyncScale: 0
-  SyncParent: 0
+  SyncScale: 1
+  SyncParent: 1
   _autoAOIOverride: 1
   DisableSharedModeInterpolation: 0
 --- !u!114 &4277411146879749979
@@ -1762,7 +1766,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Animator: {fileID: 7936225606015777455}
   ApplyTiming: 0
-  SyncSettings: 127
+  SyncSettings: -1
   StateHashes: 0000000028a981077af3fe2e3270625b602a1d72f93710cd12f49830a1609f62d8aa0cc42afa8626a8b5caa39d6d1f3baede3a0c1146757c22f5504b2e463d616de80e62
   TriggerHashes: 000000002afa8626a1609f62
   TotalWords: 7

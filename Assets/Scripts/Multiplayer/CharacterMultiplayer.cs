@@ -10,11 +10,14 @@ public class CharacterMultiplayer : NetworkBehaviour
     public AudioSource HipHopSound;
     public AudioSource SalsaSound;
     public AudioSource SwingSound;
-    public bool isDancinNow = false;
-    public bool isRemaining = false;
+
+    [Networked] public bool isDancinNow { get; set; } = false;
+    [Networked] public bool isRemaining { get; set; } = false;
+    [Networked] public Vector3 velocity { get; set; }
+    [Networked] public bool isGrounded { get; set; } = false;
 
     [Header("Movement")]
-    public float moveSpeed;
+    public float moveSpeed = 5f;
     private Vector3 moveDirection;
 
     public CharacterController character;
@@ -25,19 +28,16 @@ public class CharacterMultiplayer : NetworkBehaviour
     public int selectedSkinIndex = 0;
 
     [Header("Gravidade player")]
-    public Vector3 velocity;
     private float lastGroundedTime;
     private float coyoteTime = 0.1f;
     public float jumpHeight = 1.5f;
     public float gravity = -9.81f;
 
-    [Header("GroundCheck")]
-    public bool isGrounded;
-
     [Header("Knockback")]
     public float knockbackDuration = 0.3f;
     private float knockbackTimer;
     private Vector3 knockbackVelocity;
+
     [HideInInspector] public Health health;
 
     public bool canMove
@@ -49,65 +49,54 @@ public class CharacterMultiplayer : NetworkBehaviour
     void Awake()
     {
         networkObject = GetComponent<NetworkObject>();
-
-        if (networkObject == null)
-        {
-            Debug.LogError("NetworkObject não encontrado no Awake!");
-        }
-        else
-        {
-            Debug.Log($"NetworkObject encontrado no Awake: {networkObject.Id}");
-        }
-    }
-
-    void Start()
-    {
         character = GetComponent<CharacterController>();
         capsuleColliderCharacter = GetComponent<CapsuleCollider>();
         animator = GetComponent<Animator>();
         health = GetComponent<Health>();
+    }
 
+    void Start()
+    {
         var ui = UIreferencesLobby.Instance;
-        ui.MostrarBtn.SetActive(true);
-        ui.ViewObjs.GetComponent<CanvasGroup>().alpha = 0;
-        ui.ViewObjs.GetComponent<CanvasGroup>().interactable = false;
-        ui.ViewObjs.GetComponent<CanvasGroup>().blocksRaycasts = false;
-        ui.SelectedSkinsUI.SetActive(false);
+        if (ui != null)
+        {
+            ui.MostrarBtn.SetActive(true);
+            ui.ViewObjs.GetComponent<CanvasGroup>().alpha = 0;
+            ui.ViewObjs.GetComponent<CanvasGroup>().interactable = false;
+            ui.ViewObjs.GetComponent<CanvasGroup>().blocksRaycasts = false;
+            ui.SelectedSkinsUI.SetActive(false);
+        }
     }
 
     public override void Spawned()
     {
-        if (networkObject != null && networkObject.HasInputAuthority)
+        Debug.Log($"Player spawned - HasInputAuthority: {Object.HasInputAuthority}, IsProxy: {Object.IsProxy}");
+
+        if (Object.HasInputAuthority)
         {
             Debug.Log("Configurando para jogador local");
-            UIreferencesLobby.Instance.player = gameObject;
-        }
-
-        if (Runner == null)
-        {
-            Debug.LogError("Runner ainda é null após Spawned()! Isso é um problema grave.");
-
-            // Tentar encontrar o Runner manualmente
-            NetworkRunner foundRunner = FindFirstObjectByType<NetworkRunner>();
-            if (foundRunner != null)
+            if (UIreferencesLobby.Instance != null)
             {
-                Debug.Log($"Runner encontrado manualmente: {foundRunner.name}");
+                UIreferencesLobby.Instance.player = gameObject;
             }
-            else
-            {
-                Debug.LogError("Nenhum NetworkRunner encontrado na cena!");
-            }
-        }
-        else
-        {
-            Debug.Log("Runner encontrado: " + Runner.name);
         }
     }
 
     public override void FixedUpdateNetwork()
     {
-        if (!GetInput(out NetworkInputData inputData)) return;
-        if (!networkObject.HasInputAuthority) return;
+        // Processa input apenas para o jogador local
+        if (GetInput(out NetworkInputData inputData))
+        {
+            ProcessInput(inputData);
+        }
+
+        // Atualiza animações e estados para TODOS os jogadores
+        UpdateCommonStates();
+    }
+
+    private void ProcessInput(NetworkInputData inputData)
+    {
+        if (!Object.HasInputAuthority) return;
         if (character == null) return;
 
         isGrounded = character.isGrounded;
@@ -117,11 +106,6 @@ public class CharacterMultiplayer : NetworkBehaviour
         }
 
         bool isActuallyGrounded = Runner.SimulationTime - lastGroundedTime < coyoteTime;
-        animator.SetBool("IsGround", isGrounded);
-        animator.SetBool("Jump", isGrounded);
-        animator.SetFloat("yVelocity", velocity.y);
-        animator.SetBool("IsAlive", health.isAlive);
-        animator.SetBool("isDancinNow", isDancinNow);
 
         if (!health.isAlive)
         {
@@ -137,6 +121,7 @@ public class CharacterMultiplayer : NetworkBehaviour
         {
             character.Move(knockbackVelocity * Runner.DeltaTime);
             knockbackTimer -= Runner.DeltaTime;
+            return;
         }
 
         HandleDancin(inputData);
@@ -146,7 +131,6 @@ public class CharacterMultiplayer : NetworkBehaviour
         bool isAttackOrDance = state.IsName("Attack") || state.IsName("HipHop") ||
                                state.IsName("SalsaDance") || state.IsName("SwingDance");
 
-        // Root motion ativo apenas durante ataque/dança e se o personagem estiver vivo
         animator.applyRootMotion = isAttackOrDance && health.isAlive;
 
         if (canMove && !isAttackOrDance)
@@ -162,13 +146,25 @@ public class CharacterMultiplayer : NetworkBehaviour
 
             if (isActuallyGrounded && velocity.y < 0)
             {
-                velocity.y = -2f;
+                var vel = velocity;
+                vel.y = -2f;
+                velocity = vel;
             }
 
-            velocity.y += gravity * Runner.DeltaTime;
+            var v = velocity;
+            v.y += gravity * Runner.DeltaTime;
+            velocity = v;
         }
+    }
 
-        Debug.LogWarning("RootMotion ativo: " + animator.applyRootMotion);
+    private void UpdateCommonStates()
+    {
+        // Atualiza animações para TODOS os jogadores (local e remotos)
+        animator.SetBool("IsGround", isGrounded);
+        animator.SetBool("Jump", isGrounded);
+        animator.SetFloat("yVelocity", velocity.y);
+        animator.SetBool("IsAlive", health.isAlive);
+        animator.SetBool("isDancinNow", isDancinNow);
     }
 
     void OnAnimatorMove()
@@ -205,18 +201,20 @@ public class CharacterMultiplayer : NetworkBehaviour
 
     private void HandleAnimations(NetworkInputData inputData)
     {
-        if (!networkObject.HasInputAuthority) return;
-
         isMoving = inputData.moveInput.magnitude > 0.1f;
         animator.SetBool("Run", isMoving);
 
-        if (isMoving && isGrounded && !animator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
+        // Sons apenas para jogador local
+        if (Object.HasInputAuthority)
         {
-            if (!PassosSound.isPlaying) PassosSound.Play();
-        }
-        else if (PassosSound.isPlaying)
-        {
-            PassosSound.Stop();
+            if (isMoving && isGrounded && !animator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
+            {
+                if (!PassosSound.isPlaying) PassosSound.Play();
+            }
+            else if (PassosSound.isPlaying)
+            {
+                PassosSound.Stop();
+            }
         }
 
         animator.SetFloat("horizontal", inputData.moveInput.x);
@@ -261,17 +259,17 @@ public class CharacterMultiplayer : NetworkBehaviour
         if (danceHipHop != 0)
         {
             animator.SetInteger("DanceNumber", danceHipHop);
-            if (!isRemaining) HipHopSound.Play();
+            if (!isRemaining && Object.HasInputAuthority) HipHopSound.Play();
         }
         else if (danceSalsa != 0)
         {
             animator.SetInteger("DanceNumber", danceSalsa);
-            if (!isRemaining) SalsaSound.Play();
+            if (!isRemaining && Object.HasInputAuthority) SalsaSound.Play();
         }
         else if (danceSwing != 0)
         {
             animator.SetInteger("DanceNumber", danceSwing);
-            if (!isRemaining) SwingSound.Play();
+            if (!isRemaining && Object.HasInputAuthority) SwingSound.Play();
         }
         else
         {
@@ -281,7 +279,9 @@ public class CharacterMultiplayer : NetworkBehaviour
 
     public void Jump()
     {
-        velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        var vel = velocity;
+        vel.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        velocity = vel;
     }
 
     public void Attack()
@@ -291,7 +291,6 @@ public class CharacterMultiplayer : NetworkBehaviour
         moveDirection = Vector3.zero;
     }
 
-    // Chamado no fim da animação de ataque (adicione Animation Event)
     public void OnAttackAnimationEnd()
     {
         animator.applyRootMotion = false;
