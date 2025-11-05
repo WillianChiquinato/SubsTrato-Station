@@ -32,7 +32,6 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
     public GameObject roomNamePanel;
 
     public GameObject viewObjs;
-    private Dictionary<PlayerRef, bool> _playersReady = new();
 
     private string GetSceneInfo()
     {
@@ -48,23 +47,36 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
     [SerializeField] private int _gameplayMultiplayerSceneIndex = 2;
     [SerializeField] private int _gameplaySingleSceneIndex = 3;
 
-    [Header("Configurações de Gameplay")]
-    public NetworkObject _playerPrefab;
-    public NetworkObject _playerPrefabLvl01;
-    private int _minPlayersToStartGame = 1;
+    [Header("Configurações de Spawn")]
+    [SerializeField] private NetworkObject _playerPrefab;
+    [SerializeField] private NetworkObject _playerPrefabLvl01;
 
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
-    [SerializeField] private bool _isLoadingGameplayScene = false;
+    public Dictionary<PlayerRef, bool> _playersReady = new Dictionary<PlayerRef, bool>();
+    [Networked] public int ReadyCount { get; set; }
+
+    private bool _isLoadingGameplayScene = false;
+    private bool _hasSpawnedLobbyPlayers = false;
 
     void Awake()
     {
+        if (instance == null)
+        {
+            instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         if (GetSceneInfo() == SceneRef.FromIndex(0).ToString())
         {
             singlePlayerButton = GameObject.Find("SinglePlayer")?.GetComponent<Button>();
             multiplayerButton = GameObject.Find("MultiPlayer")?.GetComponent<Button>();
             configButton = GameObject.Find("Configuracoes")?.GetComponent<Button>();
             exitButton = GameObject.Find("Sair")?.GetComponent<Button>();
-
             roomNamePanel = GameObject.Find("RoomNameContainer");
         }
     }
@@ -241,69 +253,119 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
     public override void FixedUpdateNetwork()
     {
         if (Runner == null) return;
-        if (!Runner.IsServer) return;
 
-        if (GetSceneInfo() == SceneRef.FromIndex(1).ToString())
+        if (Runner.IsServer)
         {
-            roomCountPlayers = GameObject.Find("TextoConnect")?.GetComponent<TextMeshProUGUI>();
-            InvokeRepeating(nameof(RequestButtonReady), 2f, 1f);
-            levelLoader = FindFirstObjectByType<LevelLoaderGame>();
-
-            roomCountPlayers.text = $"{Runner.ActivePlayers.Count()} / 4";
-
-            if (readyButton != null)
+            if (GetSceneInfo() == SceneRef.FromIndex(1).ToString())
             {
-                readyButton.onClick.RemoveAllListeners();
-                readyButton.onClick.AddListener(IsplayerReadying);
-                Debug.Log("Botão Ready configurado.");
-            }
+                roomCountPlayers = GameObject.Find("TextoConnect")?.GetComponent<TextMeshProUGUI>();
+                levelLoader = FindFirstObjectByType<LevelLoaderGame>();
 
-            if (viewButtons != null)
-            {
-                viewButtons.onClick.RemoveAllListeners();
-                viewButtons.onClick.AddListener(() => StartCoroutine(ViewButtonsInputs()));
-                Debug.Log("Botão View configurado.");
-            }
+                if (roomCountPlayers != null)
+                {
+                    roomCountPlayers.text = $"{Runner.ActivePlayers.Count()} / 4";
+                }
 
-            if (closeButtons != null)
-            {
-                closeButtons.onClick.RemoveAllListeners();
-                closeButtons.onClick.AddListener(() => StartCoroutine(ViewButtonsInputsClose()));
-                Debug.Log("Botão Close configurado.");
+                SetupLobbyButtons();
+
+                int currentReadyCount = _playersReady.Count(kvp => kvp.Value);
+                if (currentReadyCount != ReadyCount)
+                {
+                    ReadyCount = currentReadyCount;
+                }
             }
+        }
+    }
+
+    private void SetupLobbyButtons()
+    {
+        if (readyButton == null)
+        {
+            RequestButtonReady();
+        }
+
+        if (readyButton != null)
+        {
+            readyButton.onClick.RemoveAllListeners();
+            readyButton.onClick.AddListener(IsplayerReadying);
+        }
+
+        if (viewButtons != null)
+        {
+            viewButtons.onClick.RemoveAllListeners();
+            viewButtons.onClick.AddListener(() => StartCoroutine(ViewButtonsInputs()));
+        }
+
+        if (closeButtons != null)
+        {
+            closeButtons.onClick.RemoveAllListeners();
+            closeButtons.onClick.AddListener(() => StartCoroutine(ViewButtonsInputsClose()));
         }
     }
 
     public void IsplayerReadying()
     {
-        isPlayerReadying = true;
-        _playersReady[Runner.LocalPlayer] = true;
-        Debug.Log($"Jogador {Runner.LocalPlayer} está pronto.");
+        if (Runner == null) return;
 
-        if (Runner.IsSceneAuthority)
+        var localPlayer = Runner.LocalPlayer;
+        isPlayerReadying = true;
+
+        Debug.Log($"🎯 Jogador {localPlayer} está pronto.");
+
+        if (Runner.IsServer)
         {
-            Debug.Log($"Jogador {Runner.LocalPlayer} marcou como pronto. Total prontos: {_playersReady.Count}/{Runner.ActivePlayers.Count()}");
-            if (Runner.ActivePlayers.Count() < 2)
+            // Servidor: conta diretamente
+            if (_playersReady.ContainsKey(localPlayer))
             {
-                if (!_isLoadingGameplayScene)
-                {
-                    Debug.Log("Jogador pronto. Iniciando cena de gameplay single player.");
-                    _isLoadingGameplayScene = true;
-                    levelLoader.Transicao(SceneRef.FromIndex(_gameplaySingleSceneIndex), Runner);
-                }
+                _playersReady[localPlayer] = true;
             }
             else
             {
-                // Verifica se todos estão prontos
-                if (_playersReady.Count >= _minPlayersToStartGame)
-                {
-                    if (!_isLoadingGameplayScene)
-                    {
-                        Debug.Log("Todos os jogadores prontos. Iniciando cena de gameplay.");
-                        _isLoadingGameplayScene = true;
-                        levelLoader.Transicao(SceneRef.FromIndex(_gameplayMultiplayerSceneIndex), Runner);
-                    }
-                }
+                _playersReady.Add(localPlayer, true);
+            }
+
+            ReadyCount = _playersReady.Count(kvp => kvp.Value);
+            CheckIfCanStartGame();
+        }
+        else
+        {
+            NotifyServerThroughPlayer();
+        }
+    }
+
+    private void NotifyServerThroughPlayer()
+    {
+        var characters = FindObjectsByType<CharacterMultiplayer>(FindObjectsSortMode.None);
+        foreach (var character in characters)
+        {
+            if (character.Object.HasInputAuthority)
+            {
+                character.RPC_NotifyReady();
+                break;
+            }
+        }
+    }
+
+    private void CheckIfCanStartGame()
+    {
+        if (_isLoadingGameplayScene) return;
+
+        int totalPlayers = Runner.ActivePlayers.Count();
+        Debug.Log($"📊 Verificando início: {ReadyCount}/{totalPlayers} prontos");
+
+        if (ReadyCount >= 1 && ReadyCount == totalPlayers)
+        {
+            _isLoadingGameplayScene = true;
+
+            if (totalPlayers == 1)
+            {
+                Debug.Log("🚀 Iniciando single player...");
+                levelLoader.Transicao(SceneRef.FromIndex(_gameplaySingleSceneIndex), Runner);
+            }
+            else
+            {
+                Debug.Log("🚀 Iniciando multiplayer...");
+                levelLoader.Transicao(SceneRef.FromIndex(_gameplayMultiplayerSceneIndex), Runner);
             }
         }
     }
@@ -370,42 +432,84 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         }
     }
 
-    // --- Implementação de INetworkRunnerCallbacks ---
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
-        Debug.Log($"Jogador {player} entrou. Cena atual: {GetSceneInfo()}");
-        if (runner.IsServer)
-        {
-            // Remove jogador antigo se existir
-            if (_spawnedCharacters.ContainsKey(player))
-            {
-                runner.Despawn(_spawnedCharacters[player]);
-                _spawnedCharacters.Remove(player);
-            }
+        Debug.Log($"=== ON PLAYER JOINED === Player: {player}, IsServer: {runner.IsServer}, Scene: {GetSceneInfo()}");
 
-            if (GetSceneInfo() == SceneRef.FromIndex(_lobbySceneIndex).ToString())
+        Scene currentScene = SceneManager.GetActiveScene();
+        var currentSceneRef = SceneRef.FromIndex(currentScene.buildIndex);
+
+        if (currentSceneRef == SceneRef.FromIndex(_lobbySceneIndex))
+        {
+            if (runner.IsServer)
             {
-                if (_playerPrefab != null)
-                {
-                    Vector3 spawnPosition = new Vector3(0.16f, 0.8f, -10f);
-                    NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
-                    _spawnedCharacters[player] = networkPlayerObject;
-                    Debug.Log($"Prefab do jogador respawnado para {player}");
-                }
+                Debug.Log($"🎮 Servidor spawnando jogador {player} no lobby");
+                SpawnPlayerInLobby(runner, player);
             }
+        }
+    }
+
+    private void SpawnPlayerInLobby(NetworkRunner runner, PlayerRef player)
+    {
+        if (_spawnedCharacters.ContainsKey(player))
+        {
+            Debug.LogWarning($"⚠️ Jogador {player} já está spawnado. Ignorando.");
+            return;
+        }
+
+        if (_playerPrefab == null)
+        {
+            Debug.LogError("❌ PlayerPrefab não atribuído!");
+            return;
+        }
+
+        Vector3 spawnPosition = GetSpawnPositionForPlayer(_spawnedCharacters.Count);
+        Debug.Log($"📍 Spawnando {player} em {spawnPosition}");
+
+        NetworkObject networkPlayerObject = runner.Spawn(
+            _playerPrefab,
+            spawnPosition,
+            Quaternion.identity,
+            inputAuthority: player
+        );
+
+        if (networkPlayerObject != null)
+        {
+            _spawnedCharacters.Add(player, networkPlayerObject);
+            _playersReady.Add(player, false); // Inicialmente não pronto
+
+            Debug.Log($"✅ {player} spawnado: {networkPlayerObject.name}");
+            Debug.Log($"   InputAuthority: {networkPlayerObject.InputAuthority}, Position: {networkPlayerObject.transform.position}");
+        }
+        else
+        {
+            Debug.LogError($"❌ Falha ao spawnar {player}");
         }
     }
 
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
     {
         Debug.Log($"Jogador {player} saiu.");
-        if (_spawnedCharacters.TryGetValue(player, out NetworkObject networkObject))
+
+        // CORREÇÃO: Usar Dictionary normal
+        if (_spawnedCharacters.ContainsKey(player))
         {
+            NetworkObject networkObject = _spawnedCharacters[player];
             if (networkObject != null)
             {
                 runner.Despawn(networkObject);
             }
             _spawnedCharacters.Remove(player);
+        }
+
+        if (_playersReady.ContainsKey(player))
+        {
+            _playersReady.Remove(player);
+        }
+
+        if (runner.IsServer)
+        {
+            ReadyCount = _playersReady.Count(kvp => kvp.Value);
         }
     }
 
@@ -413,90 +517,145 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
     {
         Scene currentScene = SceneManager.GetActiveScene();
         var currentSceneRef = SceneRef.FromIndex(currentScene.buildIndex);
-        Debug.Log($"OnSceneLoadDone: Cena {currentSceneRef} carregada.");
+        Debug.Log($"OnSceneLoadDone: Cena {currentSceneRef}. IsServer: {runner.IsServer}");
 
-        if (runner.IsServer && currentSceneRef == SceneRef.FromIndex(_lobbySceneIndex))
-        {
-            runner.StartCoroutine(WaitAndDisableViewObjs());
-        }
+        // CORREÇÃO: Resetar flag ao mudar de cena
+        _hasSpawnedLobbyPlayers = false;
 
-        //Se for a cena de gameplay, spawna aqui.
-        if (runner.IsServer && currentSceneRef == SceneRef.FromIndex(_gameplayMultiplayerSceneIndex))
-        {
-            List<Vector3> spawnPoints = new List<Vector3>()
-            {
-                new Vector3(-16.4f, 1f, 8.04f),
-                new Vector3(-0.925f, 1f, 21.662f),
-                new Vector3(13.03f, 1f, 18f),
-                new Vector3(16.38f, 1f, 5.9f)
-            };
-
-            // Embaralha a lista de spawnPoints
-            for (int i = 0; i < spawnPoints.Count; i++)
-            {
-                int rand = UnityEngine.Random.Range(i, spawnPoints.Count);
-                (spawnPoints[i], spawnPoints[rand]) = (spawnPoints[rand], spawnPoints[i]);
-            }
-
-            int index = 0;
-            foreach (var player in runner.ActivePlayers)
-            {
-                if (index >= spawnPoints.Count)
-                {
-                    Debug.LogWarning("Mais jogadores que spawns disponíveis!");
-                    break;
-                }
-
-                Vector3 spawnPos = spawnPoints[index];
-                var obj = runner.Spawn(_playerPrefabLvl01, spawnPos,
-                                       Quaternion.identity, player);
-                _spawnedCharacters[player] = obj;
-                _spawnedCharacters[player].GetComponent<Animator>().SetBool("StartGame", true);
-                Debug.Log($"Prefab do Level01 spawnado para {player} na posição {spawnPos}");
-
-                index++;
-            }
-        }
-
-        //Single player.
-        if (runner.IsServer && currentSceneRef == SceneRef.FromIndex(_gameplaySingleSceneIndex))
-        {
-            Debug.LogWarning("Modo Single Player - Spawnando jogador único.");
-            List<Vector3> spawnPoints = new List<Vector3>()
-            {
-                new Vector3(-16.4f, 1f, 8.04f),
-            };
-
-            Vector3 spawnPos = spawnPoints[0];
-            var obj = runner.Spawn(_playerPrefabLvl01, spawnPos,
-                                   Quaternion.identity, runner.ActivePlayers.First());
-            _spawnedCharacters[runner.ActivePlayers.First()] = obj;
-            _spawnedCharacters[runner.ActivePlayers.First()].GetComponent<Animator>().SetBool("StartGame", true);
-            Debug.Log($"Prefab do Level01 spawnado para {runner.ActivePlayers.First()} na posição {spawnPos}");
-        }
-
-        //Configuração de UI do lobby continua igual.
         if (currentSceneRef == SceneRef.FromIndex(_lobbySceneIndex))
         {
-            if (readyButton != null)
+            Debug.Log("🏠 Cena do lobby carregada - spawnando jogadores...");
+
+            if (runner.IsServer)
             {
-                readyButton.onClick.RemoveAllListeners();
-                readyButton.onClick.AddListener(IsplayerReadying);
+                foreach (var player in runner.ActivePlayers)
+                {
+                    if (!_spawnedCharacters.ContainsKey(player))
+                    {
+                        SpawnPlayerInLobby(runner, player);
+                    }
+                }
+                _hasSpawnedLobbyPlayers = true;
+            }
+
+            runner.StartCoroutine(WaitAndSetupLobbyUI());
+        }
+        else if (currentSceneRef == SceneRef.FromIndex(_gameplayMultiplayerSceneIndex))
+        {
+            _spawnedCharacters.Clear();
+
+            if (runner.IsServer)
+            {
+                SpawnPlayersInGameplay(runner);
+            }
+        }
+        else if (currentSceneRef == SceneRef.FromIndex(_gameplaySingleSceneIndex))
+        {
+            _spawnedCharacters.Clear();
+            if (runner.IsServer)
+            {
+                SpawnSinglePlayer(runner);
             }
         }
     }
 
-    private IEnumerator WaitAndDisableViewObjs()
+    private void SpawnPlayersInGameplay(NetworkRunner runner)
     {
-        yield return null;
+        Debug.Log("Spawnando jogadores na gameplay multiplayer...");
+
+        List<Vector3> spawnPoints = new List<Vector3>()
+        {
+            new Vector3(-16.4f, 1f, 8.04f),
+            new Vector3(-0.925f, 1f, 21.662f),
+            new Vector3(13.03f, 1f, 18f),
+            new Vector3(16.38f, 1f, 5.9f)
+        };
+
+        // Embaralha spawn points
+        for (int i = 0; i < spawnPoints.Count; i++)
+        {
+            int rand = UnityEngine.Random.Range(i, spawnPoints.Count);
+            (spawnPoints[i], spawnPoints[rand]) = (spawnPoints[rand], spawnPoints[i]);
+        }
+
+        int index = 0;
+        foreach (var player in runner.ActivePlayers)
+        {
+            if (index >= spawnPoints.Count) break;
+
+            Vector3 spawnPos = spawnPoints[index];
+            var obj = runner.Spawn(_playerPrefabLvl01, spawnPos, Quaternion.identity, player);
+            _spawnedCharacters.Add(player, obj);
+            Debug.Log($"🎮 Jogador {player} spawnado na gameplay em {spawnPos}");
+            index++;
+        }
+    }
+
+    private void SpawnSinglePlayer(NetworkRunner runner)
+    {
+        Debug.Log("Spawnando jogador single player...");
+        Vector3 spawnPos = new Vector3(-16.4f, 1f, 8.04f);
+        var player = runner.ActivePlayers.First();
+        var obj = runner.Spawn(_playerPrefabLvl01, spawnPos, Quaternion.identity, player);
+        _spawnedCharacters.Add(player, obj);
+        Debug.Log($"🎮 Jogador single spawnado em {spawnPos}");
+    }
+
+    private Vector3 GetSpawnPositionForPlayer(int playerIndex)
+    {
+        Vector3[] spawnPoints = new Vector3[]
+        {
+            new Vector3(-2f, 1f, -8f),
+            new Vector3(2f, 1f, -8f),
+            new Vector3(-4f, 1f, -6f),
+            new Vector3(4f, 1f, -6f)
+        };
+
+        if (playerIndex >= 0 && playerIndex < spawnPoints.Length)
+        {
+            return spawnPoints[playerIndex];
+        }
+
+        // Fallback
+        return new Vector3(0f, 1f, -8f);
+    }
+
+    private IEnumerator WaitAndSetupLobbyUI()
+    {
+        yield return new WaitForSeconds(0.5f);
+
+        Debug.Log("Configurando UI do lobby...");
+        RequestButtonReady();
 
         GameObject obj = GameObject.Find("ViewObjs");
         if (obj != null)
         {
             viewObjs = obj;
-            obj.GetComponent<CanvasGroup>().alpha = 0f;
-            obj.GetComponent<CanvasGroup>().interactable = false;
-            obj.GetComponent<CanvasGroup>().blocksRaycasts = false;
+            var canvasGroup = obj.GetComponent<CanvasGroup>();
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = 0f;
+                canvasGroup.interactable = false;
+                canvasGroup.blocksRaycasts = false;
+            }
+        }
+
+        if (Runner != null)
+        {
+            roomCountPlayers = GameObject.Find("TextoConnect")?.GetComponent<TextMeshProUGUI>();
+            if (roomCountPlayers != null)
+            {
+                roomCountPlayers.text = $"{Runner.ActivePlayers.Count()} / 4";
+            }
+        }
+
+        // DEBUG: Verifica se os players estão spawnados corretamente
+        Debug.Log("=== DEBUG SPAWN STATUS ===");
+        foreach (var player in Runner.ActivePlayers)
+        {
+            bool hasSpawned = _spawnedCharacters.ContainsKey(player);
+            NetworkObject playerObj = hasSpawned ? _spawnedCharacters[player] : null;
+            Debug.Log($"Player {player}: Spawned={hasSpawned}, Object={(playerObj != null ? playerObj.name : "NULL")}, InputAuthority={(playerObj != null ? playerObj.InputAuthority : "N/A")}");
         }
     }
 
@@ -521,6 +680,8 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         data.dancinSalsa = Input.GetKey(KeyCode.Alpha2);
         data.dancinSwing = Input.GetKey(KeyCode.Alpha3);
 
+        // o ESC do teclado.
+        data.SceneSensiPressed = Input.GetKeyDown(KeyCode.Escape);
 
         input.Set(data);
     }
@@ -557,6 +718,7 @@ public struct NetworkInputData : INetworkInput
 
     public bool prepareArremessoPressed;
     public bool arremessarPressed;
+    public bool SceneSensiPressed;
 
     public bool dancinHipHop;
     public bool dancinSalsa;

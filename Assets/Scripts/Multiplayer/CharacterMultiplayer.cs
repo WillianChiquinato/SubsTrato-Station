@@ -4,6 +4,8 @@ using UnityEngine;
 public class CharacterMultiplayer : NetworkBehaviour
 {
     public NetworkObject networkObject;
+    private NetworkMecanimAnimator _networkAnimator;
+    [Networked] public bool IsReady { get; set; }
 
     [Header("Sounds")]
     public AudioSource PassosSound;
@@ -15,6 +17,9 @@ public class CharacterMultiplayer : NetworkBehaviour
     [Networked] public bool isRemaining { get; set; } = false;
     [Networked] public Vector3 velocity { get; set; }
     [Networked] public bool isGrounded { get; set; } = false;
+    [Networked] public NetworkButtons ButtonsPrevious { get; set; }
+    [Networked] public Vector2 NetworkedMoveInput { get; set; }
+    [Networked] public int NetworkedDanceNumber { get; set; }
 
     [Header("Movement")]
     public float moveSpeed = 5f;
@@ -23,7 +28,6 @@ public class CharacterMultiplayer : NetworkBehaviour
     public CharacterController character;
     public CapsuleCollider capsuleColliderCharacter;
     public Animator animator;
-    public bool isMoving;
 
     public int selectedSkinIndex = 0;
 
@@ -53,6 +57,8 @@ public class CharacterMultiplayer : NetworkBehaviour
         capsuleColliderCharacter = GetComponent<CapsuleCollider>();
         animator = GetComponent<Animator>();
         health = GetComponent<Health>();
+
+        _networkAnimator = GetComponent<NetworkMecanimAnimator>();
     }
 
     void Start()
@@ -70,33 +76,109 @@ public class CharacterMultiplayer : NetworkBehaviour
 
     public override void Spawned()
     {
-        Debug.Log($"Player spawned - HasInputAuthority: {Object.HasInputAuthority}, IsProxy: {Object.IsProxy}");
+        Debug.Log($"=== PLAYER SPAWNED ===");
+        Debug.Log($"Object: {gameObject.name}");
+        Debug.Log($"HasInputAuthority: {Object.HasInputAuthority}");
+        Debug.Log($"IsProxy: {Object.IsProxy}");
+        Debug.Log($"InputAuthority: {Object.InputAuthority}");
+        Debug.Log($"Runner LocalPlayer: {Runner?.LocalPlayer}");
 
         if (Object.HasInputAuthority)
         {
-            Debug.Log("Configurando para jogador local");
-            if (UIreferencesLobby.Instance != null)
+            Debug.Log("🎮 Este é o jogador LOCAL - configurando controle");
+            SetupLocalPlayer();
+        }
+        else
+        {
+            Debug.Log("👀 Este é um jogador REMOTO - desabilitando inputs locais");
+            SetupRemotePlayer();
+        }
+
+        if (_networkAnimator != null)
+        {
+            _networkAnimator.Animator = animator;
+        }
+
+        ConfigureCommonSettings();
+    }
+
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    public void RPC_NotifyReady()
+    {
+        IsReady = true;
+        Debug.Log($"✅ Character {Object.InputAuthority} marcado como pronto");
+
+        var gm = GameManagerMultiplayer.instance;
+        if (gm == null)
+        {
+            gm = FindFirstObjectByType<GameManagerMultiplayer>();
+        }
+
+        if (gm != null && Runner.IsServer)
+        {
+            if (gm._playersReady.ContainsKey(Object.InputAuthority))
             {
-                UIreferencesLobby.Instance.player = gameObject;
+                gm._playersReady[Object.InputAuthority] = true;
             }
+            else
+            {
+                gm._playersReady.Add(Object.InputAuthority, true);
+            }
+        }
+    }
+
+    private void SetupLocalPlayer()
+    {
+        // Habilitar componentes específicos do jogador local
+        if (UIreferencesLobby.Instance != null)
+        {
+            UIreferencesLobby.Instance.player = gameObject;
+            Debug.Log("✅ Referência de UI configurada para jogador local");
+        }
+
+        AudioListener audioListener = GetComponent<AudioListener>();
+        if (audioListener != null)
+        {
+            audioListener.enabled = true;
+        }
+
+        if (character != null)
+        {
+            character.enabled = true;
+        }
+
+        Debug.Log("✅ Jogador local configurado com sucesso");
+    }
+
+    private void SetupRemotePlayer()
+    {
+        AudioListener audioListener = GetComponent<AudioListener>();
+        if (audioListener != null)
+        {
+            audioListener.enabled = false;
+        }
+    }
+
+    private void ConfigureCommonSettings()
+    {
+        if (animator != null)
+        {
+            animator.applyRootMotion = false;
         }
     }
 
     public override void FixedUpdateNetwork()
     {
-        // Processa input apenas para o jogador local
         if (GetInput(out NetworkInputData inputData))
         {
             ProcessInput(inputData);
         }
 
-        // Atualiza animações e estados para TODOS os jogadores
         UpdateCommonStates();
     }
 
     private void ProcessInput(NetworkInputData inputData)
     {
-        if (!Object.HasInputAuthority) return;
         if (character == null) return;
 
         isGrounded = character.isGrounded;
@@ -124,6 +206,9 @@ public class CharacterMultiplayer : NetworkBehaviour
             return;
         }
 
+        NetworkedMoveInput = inputData.moveInput;
+
+        // CORREÇÃO: HandleDancin deve vir ANTES da verificação de canMove
         HandleDancin(inputData);
 
         // Determina se o root motion deve estar ativo
@@ -137,7 +222,6 @@ public class CharacterMultiplayer : NetworkBehaviour
         {
             HandleMovement(inputData);
             HandleRotation(inputData);
-            HandleAnimations(inputData);
 
             if (isActuallyGrounded && inputData.jumpPressed)
             {
@@ -159,12 +243,17 @@ public class CharacterMultiplayer : NetworkBehaviour
 
     private void UpdateCommonStates()
     {
-        // Atualiza animações para TODOS os jogadores (local e remotos)
         animator.SetBool("IsGround", isGrounded);
         animator.SetBool("Jump", isGrounded);
         animator.SetFloat("yVelocity", velocity.y);
         animator.SetBool("IsAlive", health.isAlive);
         animator.SetBool("isDancinNow", isDancinNow);
+
+        animator.SetFloat("horizontal", NetworkedMoveInput.x);
+        animator.SetFloat("vertical", NetworkedMoveInput.y);
+
+        bool isMoving = NetworkedMoveInput.magnitude > 0.1f;
+        animator.SetBool("Run", isMoving);
     }
 
     void OnAnimatorMove()
@@ -184,8 +273,10 @@ public class CharacterMultiplayer : NetworkBehaviour
 
         Vector3 move = moveDirection * moveSpeed;
         move.y = velocity.y;
-
+        
         character.Move(move * Runner.DeltaTime);
+        
+        Debug.Log($"Move: {move}, DeltaTime: {Runner.DeltaTime}");
     }
 
     private void HandleRotation(NetworkInputData inputData)
@@ -199,15 +290,66 @@ public class CharacterMultiplayer : NetworkBehaviour
         }
     }
 
-    private void HandleAnimations(NetworkInputData inputData)
+    private void HandleDancin(NetworkInputData inputData)
     {
-        isMoving = inputData.moveInput.magnitude > 0.1f;
-        animator.SetBool("Run", isMoving);
+        // Apenas processar dança se o jogador estiver vivo e puder se mover
+        if (!health.isAlive) return;
 
-        // Sons apenas para jogador local
+        bool anyDancePressed = inputData.dancinHipHop || inputData.dancinSalsa || inputData.dancinSwing;
+
+        if (!isRemaining && anyDancePressed && Object.HasInputAuthority)
+        {
+            int danceNumber = 0;
+            if (inputData.dancinHipHop) danceNumber = 1;
+            else if (inputData.dancinSalsa) danceNumber = 3;
+            else if (inputData.dancinSwing) danceNumber = 2;
+
+            if (danceNumber > 0)
+            {
+                RPC_StartDance(danceNumber);
+            }
+        }
+
+        // Atualizar animator com o número da dança atual
+        animator.SetInteger("DanceNumber", NetworkedDanceNumber);
+
+        AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
+        if (state.IsName("HipHop") || state.IsName("SalsaDance") || state.IsName("SwingDance"))
+        {
+            if (state.normalizedTime >= 0.95f)
+            {
+                if (Object.HasStateAuthority)
+                {
+                    NetworkedDanceNumber = 0;
+                    isDancinNow = false;
+                    isRemaining = false;
+                }
+            }
+        }
+    }
+
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    private void RPC_StartDance(int danceNumber)
+    {
+        NetworkedDanceNumber = danceNumber;
+        isDancinNow = true;
+        isRemaining = true;
+
+        Debug.Log($"💃 Dança iniciada: {danceNumber}");
+    }
+
+    public override void Render()
+    {
+        UpdateVisuals();
+    }
+
+    private void UpdateVisuals()
+    {
         if (Object.HasInputAuthority)
         {
-            if (isMoving && isGrounded && !animator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
+            bool isMoving = NetworkedMoveInput.magnitude > 0.1f;
+
+            if (isMoving && isGrounded && !isDancinNow && !animator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
             {
                 if (!PassosSound.isPlaying) PassosSound.Play();
             }
@@ -215,65 +357,11 @@ public class CharacterMultiplayer : NetworkBehaviour
             {
                 PassosSound.Stop();
             }
-        }
 
-        animator.SetFloat("horizontal", inputData.moveInput.x);
-        animator.SetFloat("vertical", inputData.moveInput.y);
-    }
-
-    private void HandleDancin(NetworkInputData inputData)
-    {
-        isDancinNow = inputData.dancinHipHop || inputData.dancinSalsa || inputData.dancinSwing;
-        int danceHipHop = 0;
-        int danceSalsa = 0;
-        int danceSwing = 0;
-
-        if (!isRemaining)
-        {
-            danceHipHop = inputData.dancinHipHop ? 1 : 0;
-            danceSalsa = inputData.dancinSalsa ? 3 : 0;
-            danceSwing = inputData.dancinSwing ? 2 : 0;
-        }
-
-        AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
-        if (state.IsName("HipHop") || state.IsName("SalsaDance") || state.IsName("SwingDance"))
-        {
-            isRemaining = true;
-            if (state.normalizedTime >= 0.9f)
+            if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Alpha3))
             {
-                danceHipHop = danceSalsa = danceSwing = 0;
-                isDancinNow = false;
-                animator.applyRootMotion = false;
-                animator.SetInteger("DanceNumber", 0);
+                Debug.Log($"Tecla de dança pressionada - DanceNumber: {NetworkedDanceNumber}, isDancinNow: {isDancinNow}");
             }
-
-            if (state.normalizedTime >= 0.96f)
-            {
-                HipHopSound.Stop();
-                SalsaSound.Stop();
-                SwingSound.Stop();
-                isRemaining = false;
-            }
-        }
-
-        if (danceHipHop != 0)
-        {
-            animator.SetInteger("DanceNumber", danceHipHop);
-            if (!isRemaining && Object.HasInputAuthority) HipHopSound.Play();
-        }
-        else if (danceSalsa != 0)
-        {
-            animator.SetInteger("DanceNumber", danceSalsa);
-            if (!isRemaining && Object.HasInputAuthority) SalsaSound.Play();
-        }
-        else if (danceSwing != 0)
-        {
-            animator.SetInteger("DanceNumber", danceSwing);
-            if (!isRemaining && Object.HasInputAuthority) SwingSound.Play();
-        }
-        else
-        {
-            animator.SetInteger("DanceNumber", 0);
         }
     }
 

@@ -1,6 +1,8 @@
 using System.Linq;
 using Fusion;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerMoviment : NetworkBehaviour
 {
@@ -47,6 +49,9 @@ public class PlayerMoviment : NetworkBehaviour
     private float pickUpDistance = 2f;
     public Transform playerCameraTransform;
     public GameObject pickUpUI;
+    public GameObject SensibilidadeUI;
+    public Slider TextSensiX;
+    public Slider TextSensiY;
     private RaycastHit hit;
 
     public GameObject myHandItem;
@@ -84,6 +89,7 @@ public class PlayerMoviment : NetworkBehaviour
     void Awake()
     {
         networkObject = GetComponent<NetworkObject>();
+        animator = GetComponent<Animator>();
 
         if (networkObject == null)
         {
@@ -95,16 +101,14 @@ public class PlayerMoviment : NetworkBehaviour
         }
 
         inventory = GetComponent<PlayerInventory>();
+        animator.SetBool("StartGame", true);
     }
 
     void Start()
     {
         character = GetComponent<CharacterController>();
         capsuleColliderCharacter = GetComponent<CapsuleCollider>();
-        animator = GetComponent<Animator>();
         health = GetComponent<Health>();
-
-        animator.SetBool("StartGame", true);
 
         if (!networkObject.HasInputAuthority)
         {
@@ -117,9 +121,13 @@ public class PlayerMoviment : NetworkBehaviour
         var ui = UIreferences.Instance;
         DeathUI = ui.DeathUI;
         pickUpUI = ui.PickUpItemUI;
+        SensibilidadeUI = ui.SensibilidadeUI;
+        TextSensiX = ui.TextSensiX;
+        TextSensiY = ui.TextSensiY;
         estaminaBar = ui.EstaminaBarUI.GetComponent<EstaminaBar>();
         DeathUI.SetActive(false);
         pickUpUI.SetActive(false);
+        SensibilidadeUI.SetActive(false);
     }
 
     public override void Spawned()
@@ -173,6 +181,43 @@ public class PlayerMoviment : NetworkBehaviour
         animator.SetBool("AimPistol", aimAnimActive);
         animator.SetBool("Throw", Arremessar);
 
+        if (inputData.SceneSensiPressed && TextSensiX != null && TextSensiY != null)
+        {
+            SensibilidadeUI.SetActive(!SensibilidadeUI.activeSelf);
+            canMove = !SensibilidadeUI.activeSelf;
+
+            if (SensibilidadeUI.activeSelf)
+            {
+                Cursor.lockState = CursorLockMode.Confined;
+                Cursor.visible = true;
+
+                TextSensiX.value = playerCameraTransform.GetComponent<PlayerCam>().sensX;
+                TextSensiY.value = playerCameraTransform.GetComponent<PlayerCam>().sensY;
+                SensibilidadeUI.transform.GetChild(4).GetComponent<TextMeshProUGUI>().text = TextSensiX.value.ToString("F2");
+                SensibilidadeUI.transform.GetChild(5).GetComponent<TextMeshProUGUI>().text = TextSensiY.value.ToString("F2");
+            }
+            else
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+
+                playerCameraTransform.GetComponent<PlayerCam>().sensX = TextSensiX.value;
+                playerCameraTransform.GetComponent<PlayerCam>().sensY = TextSensiY.value;
+
+                PlayerPrefs.SetFloat("SensX", playerCameraTransform.GetComponent<PlayerCam>().sensX);
+                PlayerPrefs.SetFloat("SensY", playerCameraTransform.GetComponent<PlayerCam>().sensY);
+            }
+        }
+
+        if (SensibilidadeUI.activeSelf)
+        {
+            SensibilidadeUI.transform.GetChild(4).GetComponent<TextMeshProUGUI>().text = TextSensiX.value.ToString("F2");
+            SensibilidadeUI.transform.GetChild(5).GetComponent<TextMeshProUGUI>().text = TextSensiY.value.ToString("F2");
+
+            var cam = playerCameraTransform.GetComponent<PlayerCam>();
+            cam.sensX = TextSensiX.value;
+            cam.sensY = TextSensiY.value;
+        }
         if (health.isAlive)
         {
             if (animator.GetCurrentAnimatorStateInfo(0).IsName("StartGame") && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.05f)

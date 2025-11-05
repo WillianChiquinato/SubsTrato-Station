@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,6 +22,10 @@ public class UIreferences : MonoBehaviour
     public GameObject textObj;
 
     public GameObject EstaminaBarUI;
+
+    public GameObject SensibilidadeUI;
+    public Slider TextSensiX;
+    public Slider TextSensiY;
 
     private void Awake()
     {
