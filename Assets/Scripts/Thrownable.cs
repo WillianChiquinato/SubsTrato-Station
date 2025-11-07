@@ -52,36 +52,38 @@ public class Thrownable : NetworkBehaviour
 
     private void ProcessarArremesso(NetworkInputData inputData)
     {
-        // Quando começar a segurar botão direito
-        if (inputData.aimActive && !carregando)
+        if (inputData.prepareArremessoPressed && !carregando && playerMoviment.Arremessar)
         {
             carregando = true;
             forcaAtual = forcaMin;
+            ThrowDebugLogger.LogThrow($"Thrownable iniciou carregamento - Força inicial: {forcaAtual}");
+            Debug.Log("[THROWNABLE] Iniciou carregamento do arremesso");
         }
 
-        // Enquanto segurar botão direito
-        if (carregando && inputData.prepareArremessoPressed)
+        if (carregando && inputData.prepareArremessoPressed && playerMoviment.Arremessar)
         {
             forcaAtual += velocidadeCarregamento * Runner.DeltaTime;
             forcaAtual = Mathf.Clamp(forcaAtual, forcaMin, forcaMax);
 
-            // Só mostra trajetória no cliente local
             if (Object.HasInputAuthority)
             {
                 MostrarTrajetoria();
             }
         }
 
-        // Quando soltar botão direito
-        if (inputData.arremessarPressed && carregando)
+        // Quando soltar botão direito (arremessar)
+        if (inputData.arremessarPressed && carregando && !playerMoviment.Arremessar)
         {
+            ThrowDebugLogger.LogThrow($"Executando arremesso - Força: {forcaAtual}, HasStateAuthority: {Object.HasStateAuthority}");
+            Debug.Log($"[THROWNABLE] Executando arremesso com força: {forcaAtual}");
+            
             if (Object.HasStateAuthority)
             {
                 ArremessarNoServidor();
             }
             else
             {
-                // Cliente solicita arremesso ao servidor
+                ThrowDebugLogger.LogNetworkEvent("RPC_REQUEST", $"Cliente solicitando arremesso com força {forcaAtual}");
                 RPC_SolicitarArremesso(forcaAtual);
             }
 
@@ -92,9 +94,10 @@ public class Thrownable : NetworkBehaviour
             }
         }
 
-        // Se parou de carregar sem arremessar
-        if (carregando && !inputData.prepareArremessoPressed && !inputData.aimActive)
+        if (carregando && (!inputData.prepareArremessoPressed || !playerMoviment.Arremessar))
         {
+            ThrowDebugLogger.LogThrow("Arremesso cancelado");
+            Debug.Log("[THROWNABLE] Cancelou arremesso");
             carregando = false;
             if (Object.HasInputAuthority)
             {
@@ -112,53 +115,86 @@ public class Thrownable : NetworkBehaviour
 
     private void ArremessarNoServidor()
     {
-        if (playerMoviment.inventory.myHandItem != null)
+        ThrowDebugLogger.LogNetworkEvent("SERVER_THROW", "ArremessarNoServidor iniciado");
+        Debug.Log("[THROWNABLE] ArremessarNoServidor iniciado");
+        
+        if (playerMoviment.inventory.myHandItem == null)
         {
-            ItemClass itemClass = playerMoviment.inventory.myHandItem.GetComponent<ItemClass>();
-            if (itemClass != null)
-            {
-                GameObject dropPrefab = ItemDatabase.GetPrefabForItem(itemClass.itemSO);
-                if (dropPrefab == null)
-                {
-                    Debug.LogError("Prefab não encontrado!");
-                    return;
-                }
-
-                // Calcula posição e direção
-                Vector3 spawnPos = GetSpawnPosition();
-
-                Vector3 direcaoMira = GetDirecaoMira();
-                Vector3 velocity = direcaoMira * forcaAtual;
-                Vector3 angularVelocity = Random.insideUnitSphere * 7f;
-
-                Debug.Log($"Spawnando em: {spawnPos}");
-
-                // Spawn simples primeiro
-                var thrownObject = Runner.Spawn(
-                    dropPrefab,
-                    spawnPos,
-                    Quaternion.identity,
-                    Object.InputAuthority
-                );
-
-                // Aplica física IMEDIATAMENTE após spawn
-                if (thrownObject.TryGetComponent<Rigidbody>(out var rb))
-                {
-                    // Configuração imediata da física
-                    rb.position = spawnPos;
-                    rb.linearVelocity = velocity;
-                    rb.angularVelocity = angularVelocity;
-                }
-
-                // Chama RPC para sincronizar estado inicial
-                if (thrownObject.TryGetComponent<ItemArremessavel>(out var item))
-                {
-                    item.Rpc_SetInitialState(spawnPos, Quaternion.identity, velocity, angularVelocity);
-                }
-
-                RPC_RemoverItemDoInventario();
-            }
+            ThrowDebugLogger.LogThrowError("Nenhum item na mão para arremessar");
+            Debug.LogWarning("[THROWNABLE] Nenhum item na mão para arremessar");
+            return;
         }
+
+        ItemClass itemClass = playerMoviment.inventory.myHandItem.GetComponent<ItemClass>();
+        if (itemClass == null)
+        {
+            ThrowDebugLogger.LogThrowError("ItemClass não encontrado no item");
+            Debug.LogError("[THROWNABLE] ItemClass não encontrado no item");
+            return;
+        }
+
+        GameObject dropPrefab = ItemDatabase.GetPrefabForItem(itemClass.itemSO);
+        if (dropPrefab == null)
+        {
+            ThrowDebugLogger.LogThrowError($"Prefab não encontrado no ItemDatabase para {itemClass.itemSO.name}");
+            Debug.LogError("[THROWNABLE] Prefab não encontrado no ItemDatabase!");
+            return;
+        }
+
+        ThrowDebugLogger.LogNetworkEvent("INVENTORY_CLEAR", "Removendo item do inventário antes do spawn");
+        RPC_RemoverItemDoInventario();
+
+        StartCoroutine(SpawnItemComDelay(dropPrefab));
+    }
+
+    private System.Collections.IEnumerator SpawnItemComDelay(GameObject dropPrefab)
+    {
+        yield return null;
+        
+        Vector3 spawnPos = GetSpawnPosition();
+        Vector3 direcaoMira = GetDirecaoMira();
+        Vector3 velocity = direcaoMira * forcaAtual;
+        Vector3 angularVelocity = Random.insideUnitSphere * 7f;
+
+        ThrowDebugLogger.LogPhysicsEvent(dropPrefab.name, spawnPos, velocity);
+        Debug.Log($"[THROWNABLE] Spawnando item em: {spawnPos} com força: {forcaAtual}");
+
+        // Spawn do objeto
+        var thrownObject = Runner.Spawn(
+            dropPrefab,
+            spawnPos,
+            Quaternion.identity,
+            Object.InputAuthority
+        );
+
+        if (thrownObject == null)
+        {
+            ThrowDebugLogger.LogThrowError("Falha ao spawnar objeto!");
+            Debug.LogError("[THROWNABLE] Falha ao spawnar objeto!");
+            yield break;
+        }
+
+        ThrowDebugLogger.LogNetworkEvent("SPAWN_SUCCESS", $"Objeto {thrownObject.name} spawnado com sucesso");
+
+        yield return null;
+
+        if (thrownObject.TryGetComponent<Rigidbody>(out var rb))
+        {
+            rb.position = spawnPos;
+            rb.linearVelocity = velocity;
+            rb.angularVelocity = angularVelocity;
+            ThrowDebugLogger.LogPhysicsEvent(thrownObject.name, rb.position, rb.linearVelocity);
+            Debug.Log($"[THROWNABLE] Física aplicada - Velocidade: {velocity}");
+        }
+
+        if (thrownObject.TryGetComponent<ItemArremessavel>(out var item))
+        {
+            ThrowDebugLogger.LogNetworkEvent("INITIAL_SYNC", "Enviando RPC de estado inicial");
+            item.Rpc_SetInitialState(spawnPos, Quaternion.identity, velocity, angularVelocity);
+        }
+
+        ThrowDebugLogger.LogNetworkEvent("THROW_COMPLETE", "Arremesso concluído com sucesso");
+        Debug.Log("[THROWNABLE] Arremesso concluído com sucesso");
     }
 
     private Vector3 GetSpawnPosition()
@@ -174,7 +210,6 @@ public class Thrownable : NetworkBehaviour
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_RemoverItemDoInventario()
     {
-        // Verifica se as referências estão válidas
         if (playerMoviment == null || playerMoviment.inventory == null)
         {
             Debug.LogWarning("Referências do inventário não encontradas no RPC");
@@ -216,7 +251,6 @@ public class Thrownable : NetworkBehaviour
         }
     }
 
-    // Garante que a mira seja desativada quando o script for desativado
     public override void Despawned(NetworkRunner runner, bool hasState)
     {
         if (lineRenderer != null)

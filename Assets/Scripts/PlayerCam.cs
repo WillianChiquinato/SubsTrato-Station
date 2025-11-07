@@ -4,8 +4,8 @@ using UnityEngine.Animations.Rigging;
 public class PlayerCam : MonoBehaviour
 {
     [Header("Sensibilidade do mouse")]
-    public float sensX = 100f;
-    public float sensY = 100f;
+    public float sensX = 150f; // Aumentei de 100f para 150f
+    public float sensY = 150f; // Aumentei de 100f para 150f
 
     [Header("Referências")]
     public PlayerMoviment player;
@@ -32,23 +32,30 @@ public class PlayerCam : MonoBehaviour
         cam = GetComponent<Camera>();
         audioListener = GetComponent<AudioListener>();
 
-        // Garante que apenas a câmera local ficará ativa
+        // Caregar sensibilidades salvas
+        if (PlayerPrefs.HasKey("SensX"))
+        {
+            sensX = PlayerPrefs.GetFloat("SensX");
+        }
+        if (PlayerPrefs.HasKey("SensY"))
+        {
+            sensY = PlayerPrefs.GetFloat("SensY");
+        }
+
         cam.enabled = false;
         audioListener.enabled = false;
-
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
 
     void Update()
     {
-        // Se ainda não encontrou o player local, procura
         if (localPlayer == null)
         {
-            var players = FindObjectsOfType<PlayerMoviment>();
+            var players = FindObjectsByType<PlayerMoviment>(FindObjectsSortMode.None);
             foreach (var p in players)
             {
-                if (p.Object.HasInputAuthority)
+                if (p.Object != null && p.Object.HasInputAuthority)
                 {
                     localPlayer = p;
                     player = localPlayer;
@@ -63,10 +70,12 @@ public class PlayerCam : MonoBehaviour
                     rightArmIK.weight = 0;
                     leftArmIK.weight = 0;
                     isLocalCamActive = true;
+                    
+                    Debug.Log("🎥 Câmera ativada para jogador local");
                     break;
                 }
             }
-            return; // Espera até achar o player local
+            return;
         }
 
         // Se não é a câmera local, não faz nada
@@ -130,13 +139,9 @@ public class PlayerCam : MonoBehaviour
         if (transform.parent != null)
             transform.SetParent(null);
 
-        // Rotação horizontal do corpo
         player.transform.Rotate(Vector3.up * lookX);
-
-        // Rotação vertical da câmera
         xRotation = Mathf.Clamp(xRotation - lookY, -90f, 90f);
 
-        // Posição suavizada
         Vector3 desiredPos = cameraAnchor.position + offset;
         transform.position = Vector3.SmoothDamp(transform.position, desiredPos, ref camVelocity, followSmoothTime);
 

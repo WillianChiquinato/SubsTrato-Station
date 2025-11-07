@@ -33,11 +33,28 @@ public class PilarButtonSimon : MonoBehaviour, IUsable
 
     public void OnClickSimonGame()
     {
-        SimonGameObject.GetComponent<SimonGame>().StartCoroutine(SimonGameObject.GetComponent<SimonGame>().StartRound());
-        if (!audioSourceBtnInitial.isPlaying)
+        if (SimonGameObject != null)
         {
-            AudioSource.PlayClipAtPoint(audioSourceBtnInitial.clip, transform.position);
+            var simonGame = SimonGameObject.GetComponent<SimonGame>();
+            if (simonGame != null)
+            {
+                simonGame.StartCoroutine(simonGame.StartRound());
+                
+                if (audioSourceBtnInitial != null && !audioSourceBtnInitial.isPlaying)
+                {
+                    try
+                    {
+                        AudioSource.PlayClipAtPoint(audioSourceBtnInitial.clip, transform.position);
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogWarning($"Erro ao tocar som: {e.Message}");
+                    }
+                }
+                
+                simonPilarReset = true;
+                Debug.Log("🎮 Simon Game iniciado!");
+            }
         }
-        simonPilarReset = true;
     }
 }

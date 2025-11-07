@@ -649,7 +649,6 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
             }
         }
 
-        // DEBUG: Verifica se os players estão spawnados corretamente
         Debug.Log("=== DEBUG SPAWN STATUS ===");
         foreach (var player in Runner.ActivePlayers)
         {
@@ -669,7 +668,7 @@ public class GameManagerMultiplayer : SimulationBehaviour, INetworkRunnerCallbac
         data.attackPressed = Input.GetMouseButton(0);
         data.prepareArremessoPressed = Input.GetMouseButton(1);
         data.useItemPressed = Input.GetMouseButtonDown(0);
-        data.aimActive = Input.GetMouseButtonDown(1);
+        data.aimActive = Input.GetMouseButton(1);  // Para armas normais
         data.interactPressed = Input.GetKeyDown(KeyCode.E);
         data.stealthPressed = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
         data.dropItemPressed = Input.GetKeyDown(KeyCode.Q);

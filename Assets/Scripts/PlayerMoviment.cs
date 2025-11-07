@@ -554,6 +554,8 @@ public class PlayerMoviment : NetworkBehaviour
         if (Arremessar) return;
         if (!networkObject.HasInputAuthority) return;
         if (!inputData.dropItemPressed) return;
+        if (aimActive) return;
+
         if (inventory.myHandItem != null)
         {
             RPC_RequestDropItem();
@@ -656,53 +658,97 @@ public class PlayerMoviment : NetworkBehaviour
             }
             else
             {
-                if (inventory.myHandItem.GetComponent<ItemArremessavel>())
+                bool isThrowableItem = inventory.myHandItem.GetComponent<ItemArremessavel>() != null;
+                bool isChip = inventory.myHandItem.GetComponent<Chip>() != null;
+                bool isWeapon = inventory.myHandItem.GetComponent<Weapon>() != null && !isThrowableItem;
+                
+                if (Time.frameCount % 60 == 0)
                 {
-                    //Segurar botao direito.
-                    if (inputData.prepareArremessoPressed)
+                    ThrowDebugLogger.LogThrow($"Item na mão - Arremessável: {isThrowableItem}, Chip: {isChip}, Arma: {isWeapon}");
+                }
+                
+                if (isThrowableItem)
+                {
+                    if (inputData.prepareArremessoPressed && !Arremessar)
                     {
+                        ThrowDebugLogger.LogThrow($"Player {gameObject.name} iniciando carregamento do arremesso");
+                        Debug.Log("[ARREMESSO] Iniciando carregamento do arremesso");
                         Arremessar = true;
                     }
 
-                    if (inputData.arremessarPressed)
+                    if (inputData.arremessarPressed && Arremessar)
                     {
+                        ThrowDebugLogger.LogThrow($"Player {gameObject.name} finalizando arremesso");
+                        Debug.Log("[ARREMESSO] Finalizando arremesso");
                         Arremessar = false;
+                    }
+                    
+                    if (!inputData.prepareArremessoPressed && Arremessar)
+                    {
+                        ThrowDebugLogger.LogThrow($"Player {gameObject.name} cancelando arremesso");
+                        Debug.Log("[ARREMESSO] Cancelando arremesso");
+                        Arremessar = false;
+                    }
+                    
+                    ThrowDebugLogger.LogInputState(
+                        gameObject.name, 
+                        inputData.prepareArremessoPressed, 
+                        inputData.arremessarPressed, 
+                        Arremessar
+                    );
+                    
+                    return;
+                }
+                else if (isWeapon && !isChip)
+                {
+                    bool shouldAim = inputData.aimActive;
+                    
+                    if (shouldAim != aimAnimActive)
+                    {
+                        aimAnimActive = shouldAim;
+                        aimActive = shouldAim;
+                        
+                        var weapon = inventory.myHandItem.GetComponent<Weapon>();
+                        if (weapon != null)
+                        {
+                            if (aimAnimActive)
+                            {
+                                inventory.myHandItem.transform.localPosition = weapon.AimOffset;
+                                inventory.myHandItem.transform.localRotation = weapon.AimOffsetRotation;
+                                ThrowDebugLogger.LogThrow($"Mira ATIVADA - AimOffset: {weapon.AimOffset}");
+                            }
+                            else
+                            {
+                                inventory.myHandItem.transform.localPosition = weapon.Offset;
+                                inventory.myHandItem.transform.localRotation = weapon.OffsetRotation;
+                                ThrowDebugLogger.LogThrow($"Mira DESATIVADA - Offset: {weapon.Offset}");
+                            }
+                        }
+                        else
+                        {
+                            ThrowDebugLogger.LogThrowWarning("Tentou mirar mas componente Weapon não encontrado");
+                        }
+                    }
+
+                    if (inputData.useItemPressed && aimActive)
+                    {
+                        ThrowDebugLogger.LogThrow($"Tentando usar arma - Mira ativa: {aimActive}");
+
+                        IUsable usable = inventory.myHandItem.GetComponent<IUsable>();
+                        if (usable != null)
+                        {
+                            ThrowDebugLogger.LogThrow("Usando arma");
+                            usable.Use(this.gameObject);
+                        }
+                        else
+                        {
+                            ThrowDebugLogger.LogThrowWarning("Componente IUsable não encontrado na arma");
+                        }
                     }
                 }
                 else
                 {
-                    if (!inventory.myHandItem.GetComponent<Chip>())
-                    {
-                        if (inputData.aimActive)
-                        {
-                            Invoke(nameof(ToggleAim), 0.5f);
-                            aimAnimActive = !aimAnimActive;
-                            if (aimAnimActive)
-                            {
-                                inventory.myHandItem.transform.localPosition = Vector3.zero + inventory.myHandItem.GetComponent<Weapon>().AimOffset;
-                                inventory.myHandItem.transform.localRotation = inventory.myHandItem.GetComponent<Weapon>().AimOffsetRotation;
-                            }
-                            else
-                            {
-                                inventory.myHandItem.transform.localPosition = Vector3.zero + inventory.myHandItem.GetComponent<Weapon>().Offset;
-                                inventory.myHandItem.transform.localRotation = inventory.myHandItem.GetComponent<Weapon>().OffsetRotation;
-                            }
-                        }
-
-                        if (inputData.useItemPressed && aimActive)
-                        {
-                            if (isStealth && isMoving)
-                            {
-                                return;
-                            }
-
-                            IUsable usable = inventory.myHandItem.GetComponent<IUsable>();
-                            if (usable != null)
-                            {
-                                usable.Use(this.gameObject);
-                            }
-                        }
-                    }
+                    ThrowDebugLogger.LogThrow($"Item não reconhecido ou chip - ignorando inputs de mira/arremesso");
                 }
             }
 
@@ -712,6 +758,28 @@ public class PlayerMoviment : NetworkBehaviour
     public void ToggleAim()
     {
         aimActive = !aimActive;
+        aimAnimActive = aimActive;
+        
+        if (inventory?.myHandItem != null)
+        {
+            var weapon = inventory.myHandItem.GetComponent<Weapon>();
+            if (weapon != null)
+            {
+                if (aimActive)
+                {
+                    inventory.myHandItem.transform.localPosition = weapon.AimOffset;
+                    inventory.myHandItem.transform.localRotation = weapon.AimOffsetRotation;
+                }
+                else
+                {
+                    inventory.myHandItem.transform.localPosition = weapon.Offset;
+                    inventory.myHandItem.transform.localRotation = weapon.OffsetRotation;
+                }
+            }
+        }
+        
+        ThrowDebugLogger.LogThrow($"ToggleAim chamado - aimActive: {aimActive}");
+        Debug.Log($"[AIM] aimActive mudou para: {aimActive}");
     }
 
     public void Heal(int amount)

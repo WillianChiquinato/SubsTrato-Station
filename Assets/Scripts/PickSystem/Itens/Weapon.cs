@@ -35,37 +35,65 @@ public class Weapon : MonoBehaviour, IUsable
         }
         
         player = FindFirstObjectByType<PlayerMoviment>();
+        
+        // Debug para verificar inicialização
+        ThrowDebugLogger.LogThrow($"Weapon iniciada - Tipo: {Type}, CurrentAmmo: {CurrentAmmo}, MaxAmmo: {MaxAmmo}");
+        
+        if (itemClass == null)
+        {
+            ThrowDebugLogger.LogThrowWarning("ItemClass não encontrado na arma");
+        }
+        
+        if (player == null)
+        {
+            ThrowDebugLogger.LogThrowWarning("PlayerMoviment não encontrado");
+        }
     }
 
     void Update()
     {
         if (WeaponType.Target != Type)
         {
-            if (CurrentAmmo <= 0)
+            if (CurrentAmmo <= 0 && anim != null)
             {
                 anim.SetBool("Ammo", false);
                 anim.SetTrigger("NoAmmo");
             }
         }
 
-        Debug.Log("Tipo de arma: " + Type);
+        // Log apenas ocasionalmente para não spammar
+        if (Time.frameCount % 300 == 0)
+        {
+            ThrowDebugLogger.LogThrow($"Weapon Update - Tipo: {Type}, Munição: {CurrentAmmo}/{MaxAmmo}");
+        }
     }
 
     public void Use(GameObject actor)
     {
+        ThrowDebugLogger.LogThrow($"Weapon.Use chamado - Tipo: {Type}, Cooldown restante: {shootCooldown - (Time.time - lastShootTime)}");
+        
         if (Time.time - lastShootTime < shootCooldown)
+        {
+            ThrowDebugLogger.LogThrow("Uso bloqueado por cooldown");
             return;
+        }
 
         switch (Type)
         {
             case WeaponType.Pistol:
+                ThrowDebugLogger.LogThrow("Usando pistola");
                 UsePistol();
                 break;
             case WeaponType.Shotgun:
+                ThrowDebugLogger.LogThrow("Usando shotgun");
                 UseShotgun();
                 break;
             case WeaponType.Target:
+                ThrowDebugLogger.LogThrow("Usando arma de alvo");
                 UseTarget();
+                break;
+            default:
+                ThrowDebugLogger.LogThrowWarning($"Tipo de arma desconhecido: {Type}");
                 break;
         }
         lastShootTime = Time.time;
@@ -75,10 +103,13 @@ public class Weapon : MonoBehaviour, IUsable
     {
         if (CurrentAmmo <= 0)
         {
+            ThrowDebugLogger.LogThrow("Pistola sem munição");
             Debug.Log("No ammo left!");
             return;
         }
+        
         CurrentAmmo--;
+        ThrowDebugLogger.LogThrow($"Pistola disparada - Munição restante: {CurrentAmmo}");
         UpdateInventoryAmmo();
         OnUse?.Invoke();
     }
@@ -87,16 +118,20 @@ public class Weapon : MonoBehaviour, IUsable
     {
         if (CurrentAmmo <= 0)
         {
+            ThrowDebugLogger.LogThrow("Shotgun sem munição");
             Debug.Log("No ammo left!");
             return;
         }
+        
         CurrentAmmo--;
+        ThrowDebugLogger.LogThrow($"Shotgun disparada - Munição restante: {CurrentAmmo}");
         UpdateInventoryAmmo();
         OnUse?.Invoke();
     }
 
     public void UseTarget()
     {
+        ThrowDebugLogger.LogThrow("Arma de alvo usada");
         OnUse?.Invoke();
         Debug.Log("Target weapon used");
     }
@@ -105,10 +140,8 @@ public class Weapon : MonoBehaviour, IUsable
     {
         if (CurrentAmmo < 0) return;
 
-        // Exemplo simples: instanciar projétil
         if (itemClass.projectilePrefab != null)
         {
-            // instancia no ponto da arma
             GameObject bullet = Instantiate(
                 itemClass.projectilePrefab,
                 pointBullet.position,
@@ -118,7 +151,6 @@ public class Weapon : MonoBehaviour, IUsable
             Rigidbody rb = bullet.GetComponent<Rigidbody>();
             if (rb != null)
             {
-                // Calcula a direção do centro da tela (mira).
                 Camera cam = Camera.main;
                 Vector3 screenCenter = new Vector3(Screen.width / 2f, Screen.height / 2f, 0f);
                 Ray ray = cam.ScreenPointToRay(screenCenter);
